@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Shapoco.Calctus.Platforms.Common
+namespace Shapoco.Platforms.Common
 {
     public static class DpiHelper
     {
