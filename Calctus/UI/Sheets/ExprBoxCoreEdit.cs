@@ -17,6 +17,7 @@ using Shapoco.Calctus.Model.Types;
 
 namespace Shapoco.Calctus.UI.Sheets {
     class ExprBoxCoreEdit {
+        private bool _suppressHide; // CandidatesShow中の謎の消失現象を抑制
         public static readonly Regex NonWordRegex = new Regex(@"\W");
         public static readonly Regex NonWordRtlRegex = new Regex(@"\W", RegexOptions.RightToLeft);
 
@@ -560,8 +561,15 @@ namespace Shapoco.Calctus.UI.Sheets {
         public void CandidatesShow() {
             if (CandidateProvider == null) return;
             if (!CandidatesAreShown()) {
+
+                // CandidatesShow中の謎の消失現象を抑制
+                _suppressHide = true;
                 _candForm = new InputCandidateForm(CandidateProvider);
+                //Console.WriteLine($"[Dbg] after new: {(_candForm == null ? "NULL" : _candForm.GetType().FullName)}");
                 _candForm.Visible = true;
+                //Console.WriteLine($"[Dbg] after visible: {(_candForm == null ? "NULL" : _candForm.GetType().FullName)}");
+                _suppressHide = false;
+
                 CandidatesSelectKey();
                 var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
                 QueryScreenCursorLocation?.Invoke(this, e);
@@ -575,6 +583,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         }
 
         public void CandidatesHide() {
+            if (_suppressHide) return; // CandidatesShow中の謎の消失現象を抑制
             if (CandidatesAreShown()) {
                 _candForm.Dispose();
                 _candForm = null;
