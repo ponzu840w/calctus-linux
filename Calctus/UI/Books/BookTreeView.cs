@@ -8,7 +8,7 @@ using System.IO;
 using System.Drawing;
 using Shapoco.Calctus.Model.Sheets;
 using Shapoco.Calctus.UI.Sheets;
-using Shapoco.Calctus.Platforms.Helpers;
+using Shapoco.Platforms.Common;
 
 namespace Shapoco.Calctus.UI.Books {
     class BookTreeView : TreeView {

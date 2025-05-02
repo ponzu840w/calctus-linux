@@ -7,10 +7,25 @@ using System.IO;
 using System.Runtime.InteropServices;
 
 // Windows Script Host Object Model を参照設定すること
-using Wsh = IWshRuntimeLibrary;
+//using Wsh = IWshRuntimeLibrary;
 
 namespace Shapoco.Platforms.Common {
     public static class StartupShortcut {
+        public static void SetStartupRegistration(
+            bool registrationState,
+            string defaultShortcutName = null,
+            string arguments = null,
+            string workDir = null) {}
+        public static void CreateShortcut(
+            string shortcutPath,
+            string targetPath,
+            string workDir,
+            string arguments,
+            string iconLocation) {}
+        public static IEnumerable<string> FindShortcut(string searchDir, string targetPath) { return null; }
+        public static string StartupPath { get { return null; } }
+        public static string GetLinkTargetOf(string linkFilePath) { return null; }
+
         /// <summary>
         /// 現在の実行ファイルに対するショートカットがスタートアップフォルダに存在するか否かを返す
         /// </summary>
@@ -27,6 +42,7 @@ namespace Shapoco.Platforms.Common {
                 .ToArray();
             return (shortcutPath.Length > 0);
         }
+/*
 
         /// <summary>
         /// 現在の実行ファイルに対するショートカットがスタートアップフォルダに存在するか否かを確認し、
@@ -161,5 +177,6 @@ namespace Shapoco.Platforms.Common {
                 if (shell != null) Marshal.FinalReleaseComObject(shell);
             }
         }
+    */
     }
 }

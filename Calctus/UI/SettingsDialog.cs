@@ -12,7 +12,7 @@ using Shapoco.Calctus.Model;
 using Shapoco.Calctus.Model.Evaluations;
 using Shapoco.Calctus.UI.Books;
 using Shapoco.Calctus.UI.Sheets;
-using Shapoco.Calctus.Platforms.Helpers;
+using Shapoco.Platforms.Common;
 
 namespace Shapoco.Calctus.UI {
     public partial class SettingsDialog : Form {
@@ -161,7 +161,7 @@ namespace Shapoco.Calctus.UI {
         private void SettingsDialog_Load(object sender, EventArgs e) {
             var s = Settings.Instance;
             try {
-                Startup_AutoStart.Checked = Shapoco.Windows.StartupShortcut.CheckStartupRegistration();
+                Startup_AutoStart.Checked = Shapoco.Platforms.Common.StartupShortcut.CheckStartupRegistration();
 
                 Startup_TrayIcon.Checked = s.Startup_TrayIcon;
                 Window_RememberPosition.Checked = s.Window_RememberPosition;
@@ -226,7 +226,8 @@ namespace Shapoco.Calctus.UI {
         }
 
         private void Startup_AutoStart_CheckedChanged(object sender, EventArgs e) {
-            Shapoco.Windows.StartupShortcut.SetStartupRegistration(((CheckBox)sender).Checked);
+            Shapoco.Platforms.Common.StartupShortcut.SetStartupRegistration(((CheckBox)sender).Checked);
+
         }
 
         private bool _settingDirectoryChanging = false;

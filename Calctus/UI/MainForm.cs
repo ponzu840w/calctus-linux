@@ -15,7 +15,7 @@ using Shapoco.Calctus.UI.Books;
 using Shapoco.Calctus.UI.Sheets;
 using Shapoco.Calctus.Model.Functions;
 using Shapoco.Calctus.Model.Functions.BuiltIns;
-using Shapoco.Calctus.Platforms.Helpers;
+using Shapoco.Platforms.Common;
 
 namespace Shapoco.Calctus.UI {
     internal partial class MainForm : Form {

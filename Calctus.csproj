@@ -329,11 +329,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
   <!-- プラットフォーム依存部とクッション -->
-  <ItemGroup>
-    <Compile Include="Platforms\PlatformsInterface.cs" />
-    <Compile Include="Platforms\DpiHelper.cs" />
-  <!--
-  </ItemGroup>
+
   <ItemGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <COMReference Include="IWshRuntimeLibrary">
       <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
@@ -344,12 +340,11 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-    -->
     <Compile Include="Platforms\Windows\**\*.cs" />
   </ItemGroup>
-  <!--
+
   <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
     <Compile Include="Platforms\Linux\**\*.cs" />
   </ItemGroup>
-  -->
+
 </Project>

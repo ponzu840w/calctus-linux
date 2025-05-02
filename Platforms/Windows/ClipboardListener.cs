@@ -5,7 +5,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
-namespace Shapoco.Windows {
+namespace Shapoco.Platforms.Common {
     class ClipboardListener : NativeWindow, IDisposable {
 
         private Form _parent = null;

@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using Shapoco.Calctus.Model.Sheets;
 using Shapoco.Calctus.Model.Mathematics;
 using Shapoco.Calctus.Model.Graphs;
-using Shapoco.Windows;
+using Shapoco.Platforms.Common;
 
 namespace Shapoco.Calctus.UI {
     partial class GraphForm : Form {

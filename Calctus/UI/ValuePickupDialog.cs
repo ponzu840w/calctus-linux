@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Shapoco.Windows;
+using Shapoco.Platforms.Common;
 using Shapoco.Calctus.UI.Sheets;
 
 namespace Shapoco.Calctus.UI {
