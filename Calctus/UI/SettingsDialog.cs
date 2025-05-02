@@ -12,6 +12,7 @@ using Shapoco.Calctus.Model;
 using Shapoco.Calctus.Model.Evaluations;
 using Shapoco.Calctus.UI.Books;
 using Shapoco.Calctus.UI.Sheets;
+using Shapoco.Calctus.Platforms.Helpers;
 
 namespace Shapoco.Calctus.UI {
     public partial class SettingsDialog : Form {
@@ -25,7 +26,7 @@ namespace Shapoco.Calctus.UI {
             InitializeComponent();
 
             {
-                var scaleFactor = this.DeviceDpi / 96;
+                var scaleFactor = DpiHelper.GetDeviceDpi(this) / 96;
                 var colorLabels = new List<Label>();
                 var xPadding = 12 * scaleFactor;
                 var centerPadding = 35 * scaleFactor;

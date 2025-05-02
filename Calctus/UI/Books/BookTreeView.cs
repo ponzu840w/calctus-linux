@@ -8,6 +8,7 @@ using System.IO;
 using System.Drawing;
 using Shapoco.Calctus.Model.Sheets;
 using Shapoco.Calctus.UI.Sheets;
+using Shapoco.Calctus.Platforms.Helpers;
 
 namespace Shapoco.Calctus.UI.Books {
     class BookTreeView : TreeView {
@@ -32,7 +33,7 @@ namespace Shapoco.Calctus.UI.Books {
             if (DesignMode) return;
 
             if (IconImageList == null) { 
-                var scaleFactor = this.DeviceDpi / 96;
+                var scaleFactor = DpiHelper.GetDeviceDpi(this) / 96;
                 IconImageList = new ImageList();
                 IconImageList.ColorDepth = ColorDepth.Depth32Bit;
                 IconImageList.ImageSize = new Size(16 * scaleFactor, 16 * scaleFactor);

@@ -15,6 +15,7 @@ using Shapoco.Calctus.UI.Books;
 using Shapoco.Calctus.UI.Sheets;
 using Shapoco.Calctus.Model.Functions;
 using Shapoco.Calctus.Model.Functions.BuiltIns;
+using Shapoco.Calctus.Platforms.Helpers;
 
 namespace Shapoco.Calctus.UI {
     internal partial class MainForm : Form {
@@ -43,7 +44,7 @@ namespace Shapoco.Calctus.UI {
             var s = Settings.Instance;
 
             // 設定保存時の DPI から起動時の DPI へのスケーリングを行う
-            var startupScalingFactor = (float)this.DeviceDpi / Settings.Instance.Window_Dpi;
+            var startupScalingFactor = (float)DpiHelper.GetDeviceDpi(this) / Settings.Instance.Window_Dpi;
             _startupWindowPos = Point.Round(new PointF(
                 s.Window_X * startupScalingFactor,
                 s.Window_Y * startupScalingFactor
@@ -199,7 +200,7 @@ namespace Shapoco.Calctus.UI {
         private void MainForm_Resize(object sender, EventArgs e) {
             if (this.WindowState == FormWindowState.Normal) {
                 var s = Settings.Instance;
-                s.Window_Dpi = this.DeviceDpi;
+                s.Window_Dpi = DpiHelper.GetDeviceDpi(this);
                 s.Window_Width = this.Width;
                 s.Window_Height = this.Height;
             }
@@ -217,7 +218,7 @@ namespace Shapoco.Calctus.UI {
         private void MainForm_LocationChanged(object sender, EventArgs e) {
             if (this.WindowState == FormWindowState.Normal) {
                 var s = Settings.Instance;
-                s.Window_Dpi = this.DeviceDpi;
+                s.Window_Dpi = DpiHelper.GetDeviceDpi(this);
                 s.Window_X = this.Left;
                 s.Window_Y = this.Top;
             }

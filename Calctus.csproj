@@ -328,8 +328,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
+  <!-- プラットフォーム依存部とクッション -->
   <ItemGroup>
     <Compile Include="Platforms\PlatformsInterface.cs" />
+    <Compile Include="Platforms\DpiHelper.cs" />
   <!--
   </ItemGroup>
   <ItemGroup Condition=" '$(OS)' == 'Windows_NT' ">
