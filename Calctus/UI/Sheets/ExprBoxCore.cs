@@ -38,6 +38,7 @@ namespace Shapoco.Calctus.UI.Sheets {
             _edit.QueryScreenCursorLocation += Edit_QueryScreenCursorLocation;
             _edit.QueryToken += _edit_QueryToken;
             _layout.Layout(Text);
+            _edit.ParentControl = owner;
         }
 
         public string Text {
