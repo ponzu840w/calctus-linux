@@ -328,9 +328,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
-  <!-- プラットフォーム依存部とクッション -->
-
-  <ItemGroup Condition=" '$(OS)' == 'Windows_NT' ">
+  <ItemGroup>
+    <Compile Include="Platforms\**\*.cs" />
     <COMReference Include="IWshRuntimeLibrary">
       <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
       <VersionMajor>1</VersionMajor>
@@ -340,14 +339,6 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-    <Compile Include="Platforms\Windows\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <Compile Include="Platforms\Linux\**\*.cs" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <Compile Include="Platforms\*.cs" />
   </ItemGroup>
 
 </Project>

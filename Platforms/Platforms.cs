@@ -2,21 +2,18 @@ using System;
 using System.Runtime.CompilerServices;
 
 namespace Shapoco.Platforms {
-  public static class Platform
-  {
+  public static class Platform {
       // 起動時に１度だけ評価される
       static readonly bool _isMono;
       static readonly bool _isUnix;
 
       // static コンストラクタ
-      static Platform()
-      {
+      static Platform() {
           _isMono = Type.GetType("Mono.Runtime") != null;
           _isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
       }
 
-      // プロパティには AggressiveInlining を付けておくと
-      // JIT がインライン展開して呼び出しオーバーヘッドを極小化してくれます
+      // AggressiveInlining でインライン化
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static bool IsMono() => _isMono;
 
