@@ -10,6 +10,7 @@ using Shapoco.Calctus.Model;
 using Shapoco.Calctus.Model.Formats;
 using Shapoco.Calctus.Model.Sheets;
 using Shapoco.Calctus.Model.Expressions;
+using Shapoco.Platforms;
 
 namespace Shapoco.Calctus.UI.Sheets {
     class ExprBoxCore : GdiBox {
@@ -112,6 +113,8 @@ namespace Shapoco.Calctus.UI.Sheets {
         public override Point GetCursorPosition() => getCursorLocation();
 
         protected override void OnGotFocus() {
+            // monoでのフォーカス復帰処理では何もしない
+            if (Platform.IsMono() && _edit.IsCandidateShowProcess) return;
             base.OnGotFocus();
             SelectAll();
             _cursorBlinkTimer.Tick += CursorBlinkTimer_Tick;

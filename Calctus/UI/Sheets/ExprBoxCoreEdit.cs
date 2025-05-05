@@ -18,7 +18,7 @@ using Shapoco.Platforms;
 
 namespace Shapoco.Calctus.UI.Sheets {
     class ExprBoxCoreEdit {
-        private bool _suppressHide;   // CandidatesShow中の謎の消失現象を抑制
+        public bool IsCandidateShowProcess = false;   // CandidatesShow中の謎の消失現象を抑制
         public Control ParentControl; // 親コントロール
         public static readonly Regex NonWordRegex = new Regex(@"\W");
         public static readonly Regex NonWordRtlRegex = new Regex(@"\W", RegexOptions.RightToLeft);
@@ -563,24 +563,29 @@ namespace Shapoco.Calctus.UI.Sheets {
         public void CandidatesShow() {
             if (CandidateProvider == null) return;
             if (!CandidatesAreShown()) {
-                // CandidatesShow中の謎の消失現象を抑制するためのフラグ オン
-                if (Platform.IsMono()) { _suppressHide = true; }
+                // monoでのアドホックな処理のための状態フラグ
+                IsCandidateShowProcess = true;
                 _candForm = new InputCandidateForm(CandidateProvider);
                 // 子フォームとするために親を指定
-                if (Platform.IsMono()) { _candForm.Parent = ParentControl; }
+                if (Platform.IsMono()) {
+                    _candForm.Parent = ParentControl;
+                }
                 _candForm.Visible = true;
-                // CandidatesShow中の謎の消失現象を抑制するためのフラグ オフ
-                if (Platform.IsMono()) { _suppressHide = false; }
-
+                // フォーカスを強制的に戻す
+                if (Platform.IsMono()) {
+                    ParentControl.Focus();
+                }
                 CandidatesSelectKey();
-                var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
-                QueryScreenCursorLocation?.Invoke(this, e);
+
                 if (Platform.IsMono()) {
                     _candForm.Location = new Point(50,50);  // 相対座標
                 } else {
+                    var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
+                    QueryScreenCursorLocation?.Invoke(this, e);
                     _candForm.Location = e.Result; // 絶対座標
                 }
                 CandidatesSetKey();
+                IsCandidateShowProcess = false;
             }
             else {
                 CandidatesSelectKey();
@@ -589,7 +594,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         }
 
         public void CandidatesHide() {
-            if (Platform.IsMono() && _suppressHide) return; // CandidatesShow中の謎の消失現象を抑制
+            if (Platform.IsMono() && IsCandidateShowProcess) return; // CandidatesShow中の謎の消失現象を抑制
             if (CandidatesAreShown()) {
                 _candForm.Dispose();
                 _candForm = null;
