@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using Shapoco.Platforms;
 
 namespace Shapoco.Calctus.UI.Sheets {
     class InputCandidateForm : Form {
@@ -26,8 +27,10 @@ namespace Shapoco.Calctus.UI.Sheets {
             _provider = provider;
 
             FormBorderStyle = FormBorderStyle.None;
-//            TopMost = true;
-            TopLevel = false;
+
+            // Windowsでは外部ウィンドウとして、monoでは内部フォームとして表示
+            if(Platform.IsWindows()){ TopMost = true; }
+            if(Platform.IsMono()){ TopLevel = false; }
             Size = new Size(250, 250);
             Font = new Font(Settings.Instance.Appearance_Font_Button_Name, Settings.Instance.Appearance_Font_Size, FontStyle.Regular);
             BackColor = Color.FromArgb(32, 32, 32);

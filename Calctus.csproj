@@ -346,5 +346,8 @@
   <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
     <Compile Include="Platforms\Linux\**\*.cs" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
+    <Compile Include="Platforms\*.cs" />
+  </ItemGroup>
 
 </Project>

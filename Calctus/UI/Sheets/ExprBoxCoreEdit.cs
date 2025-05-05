@@ -14,6 +14,7 @@ using Shapoco.Calctus.Model.Parsers;
 using Shapoco.Calctus.Model.Evaluations;
 using Shapoco.Calctus.Model.Mathematics;
 using Shapoco.Calctus.Model.Types;
+using Shapoco.Platforms;
 
 namespace Shapoco.Calctus.UI.Sheets {
     class ExprBoxCoreEdit {
@@ -562,20 +563,23 @@ namespace Shapoco.Calctus.UI.Sheets {
         public void CandidatesShow() {
             if (CandidateProvider == null) return;
             if (!CandidatesAreShown()) {
-
-                // CandidatesShow中の謎の消失現象を抑制
-                _suppressHide = true;
+                // CandidatesShow中の謎の消失現象を抑制するためのフラグ オン
+                if (Platform.IsMono()) { _suppressHide = true; }
                 _candForm = new InputCandidateForm(CandidateProvider);
-                //Console.WriteLine($"[Dbg] after new: {(_candForm == null ? "NULL" : _candForm.GetType().FullName)}");
-                _candForm.Parent = ParentControl;
+                // 子フォームとするために親を指定
+                if (Platform.IsMono()) { _candForm.Parent = ParentControl; }
                 _candForm.Visible = true;
-                //Console.WriteLine($"[Dbg] after visible: {(_candForm == null ? "NULL" : _candForm.GetType().FullName)}");
-                _suppressHide = false;
+                // CandidatesShow中の謎の消失現象を抑制するためのフラグ オフ
+                if (Platform.IsMono()) { _suppressHide = false; }
 
                 CandidatesSelectKey();
                 var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
                 QueryScreenCursorLocation?.Invoke(this, e);
-                _candForm.Location = new Point(50,50);//e.Result;
+                if (Platform.IsMono()) {
+                    _candForm.Location = new Point(50,50);  // 相対座標
+                } else {
+                    _candForm.Location = e.Result; // 絶対座標
+                }
                 CandidatesSetKey();
             }
             else {
@@ -585,7 +589,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         }
 
         public void CandidatesHide() {
-            if (_suppressHide) return; // CandidatesShow中の謎の消失現象を抑制
+            if (Platform.IsMono() && _suppressHide) return; // CandidatesShow中の謎の消失現象を抑制
             if (CandidatesAreShown()) {
                 _candForm.Dispose();
                 _candForm = null;
