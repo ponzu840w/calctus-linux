@@ -577,12 +577,16 @@ namespace Shapoco.Calctus.UI.Sheets {
                 }
                 CandidatesSelectKey();
 
+                var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
+                QueryScreenCursorLocation?.Invoke(this, e);
+                var screenPt = e.Result;
                 if (Platform.IsMono()) {
-                    _candForm.Location = new Point(50,50);  // 相対座標
+                    // monoでは面倒を避けて別ウィンドウにせず相対座標
+                    var clientPt = ParentControl.PointToClient(screenPt);
+                    _candForm.Location = clientPt;
                 } else {
-                    var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
-                    QueryScreenCursorLocation?.Invoke(this, e);
-                    _candForm.Location = e.Result; // 絶対座標
+                    // Windowsでは別ウィンドウにするので絶対座標
+                    _candForm.Location = screenPt;
                 }
                 CandidatesSetKey();
                 IsCandidateShowProcess = false;
