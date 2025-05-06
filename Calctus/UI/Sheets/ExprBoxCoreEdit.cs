@@ -599,6 +599,7 @@ namespace Shapoco.Calctus.UI.Sheets {
 
         public void CandidatesHide() {
             if (Platform.IsMono() && IsCandidateShowProcess) return; // CandidatesShow中の謎の消失現象を抑制
+            if (Platform.IsMono() && (_candForm != null && _candForm.ContainsFocus)) return; // candformクリック時のクラッシュ抑制
             if (CandidatesAreShown()) {
                 _candForm.Dispose();
                 _candForm = null;
