@@ -15,6 +15,7 @@ using Shapoco.Calctus.UI.Books;
 using Shapoco.Calctus.UI.Sheets;
 using Shapoco.Calctus.Model.Functions;
 using Shapoco.Calctus.Model.Functions.BuiltIns;
+using Shapoco.Platforms;
 using Shapoco.Platforms.Common;
 
 namespace Shapoco.Calctus.UI {
@@ -509,7 +510,15 @@ namespace Shapoco.Calctus.UI {
             if (this.WindowState == FormWindowState.Minimized) {
                 this.WindowState = FormWindowState.Normal;
             }
-            Microsoft.VisualBasic.Interaction.AppActivate(this.Text);
+            if (Platform.IsWindows()) {
+              try {
+                // Microsoft.VisualBasic.Interaction.AppActivate(this.Text);
+                // アセンブリ名付きで Type を取得
+                var type = Type.GetType( "Microsoft.VisualBasic.Interaction, Microsoft.VisualBasic");
+                var method = type?.GetMethod( "AppActivate", new[] { typeof(string) });
+                method?.Invoke(null, new object[] { this.Text });
+              } catch { }
+            }
         }
 
         private void checkActiveFileChange() {
