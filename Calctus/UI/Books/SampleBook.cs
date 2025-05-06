@@ -15,17 +15,27 @@ namespace Shapoco.Calctus.UI.Books {
         public static bool FindSampleFolder(out string path) {
             if (!_directorySearchDone) {
                 try {
-                    var binPath = AppDataManager.AssemblyPath;
-                    string sampleDir;
-                    sampleDir = Path.Combine(binPath, SampleFolderName);
-                    _directorySearchResult = null;
-                    if (Directory.Exists(sampleDir)) {
-                        _directorySearchResult = sampleDir;
+                  // 実行アセンブリのパス
+                  string binPath = AppDataManager.AssemblyPath;
+
+                  // 直接 Sample を探す
+                  string candidate = Path.Combine(binPath, SampleFolderName);
+
+                  // bin/Debug or bin/Release の判定用セグメント
+                  string debugSeg   = Path.Combine("bin", "Debug");
+                  string releaseSeg = Path.Combine("bin", "Release");
+
+                  // プロジェクト直下に Sample があるケース
+                  if (Directory.Exists(candidate)) { _directorySearchResult = candidate; }
+                  // Debug or Release の場合、さらに一段上（プロジェクト直下）を探す
+                  else if (binPath.EndsWith(debugSeg) || binPath.EndsWith(releaseSeg)) {
+                    string projectDir  = Path.GetDirectoryName(Path.GetDirectoryName(binPath));
+                    string fallback    = Path.Combine(projectDir, SampleFolderName);
+                    if (Directory.Exists(fallback)) {
+                      _directorySearchResult = fallback;
                     }
-                    else if ((binPath.EndsWith(@"\bin\Debug") || binPath.EndsWith(@"\bin\Release"))
-                        && Directory.Exists(sampleDir = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(binPath)), SampleFolderName))) {
-                        _directorySearchResult = sampleDir;
-                    }
+                  }
+
                 }
                 catch {
                     _directorySearchResult = null;
