@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Shapoco.Platforms;
 
 namespace Shapoco.Calctus.UI {
     public class KeyCodeBox : Panel {
+        const int MONO_MAX_WIDTH = 55;
+
         public event EventHandler KeyCodeChanged;
 
         private CheckBox _winBox = new CheckBox();
@@ -39,19 +43,21 @@ namespace Shapoco.Calctus.UI {
             _ctrlBox.Dock = DockStyle.Left;
             _shiftBox.Dock = DockStyle.Left;
             _keyCodeBox.Dock = DockStyle.Fill;
-            _winBox.AutoSize = false;
-            _altBox.AutoSize = false;
-            _ctrlBox.AutoSize = false;
-            _shiftBox.AutoSize = false;
-            _keyCodeBox.AutoSize = false;
             _winBox.Text = "Win";
             _altBox.Text = "Alt";
             _ctrlBox.Text = "Ctrl";
             _shiftBox.Text = "Shift";
-            _winBox.Size = _winBox.PreferredSize;
-            _altBox.Size = _altBox.PreferredSize;
-            _ctrlBox.Size = _ctrlBox.PreferredSize;
-            _shiftBox.Size = _shiftBox.PreferredSize;
+            _keyCodeBox.AutoSize = false;
+            var boxes = new[] { _winBox, _altBox, _ctrlBox, _shiftBox };
+            foreach (var box in boxes) {
+                var sz = box.PreferredSize;
+                // Mono の場合だけ、横幅を上限でクリップ
+                if (Platform.IsMono()) {
+                    sz = new Size(Math.Min(sz.Width, MONO_MAX_WIDTH), sz.Height);
+                }
+                box.AutoSize = false;
+                box.Size = sz;
+            }
             this.Controls.Add(_keyCodeBox);
             this.Controls.Add(_shiftBox);
             this.Controls.Add(_ctrlBox);
