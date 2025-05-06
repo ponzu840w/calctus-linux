@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.InteropServices;
+using Shapoco.Platforms;
 
 // Windows Script Host Object Model を参照設定すること
 using Wsh = IWshRuntimeLibrary;
@@ -40,7 +41,8 @@ namespace Shapoco.Platforms.Common {
             var appPath = System.Windows.Forms.Application.ExecutablePath;
 
             if (string.IsNullOrEmpty(defaultShortcutName)) {
-                defaultShortcutName = Path.GetFileNameWithoutExtension(appPath) + ".lnk";
+                var ext = Platform.IsMono() ? ".desktop" : ".lnk";
+                defaultShortcutName = Path.GetFileNameWithoutExtension(appPath) + ext;
             }
 
             if (registrationState) {
@@ -83,6 +85,20 @@ namespace Shapoco.Platforms.Common {
             string workDir = null,
             string arguments = "",
             string iconLocation = null) {
+
+          if (Platform.IsMono()) {
+            Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath));
+            var sb = new StringBuilder();
+            sb.AppendLine("[Desktop Entry]");
+            sb.AppendLine("Type=Application");
+            sb.AppendLine($"Exec=\"{targetPath}\" {arguments}");
+            if (!string.IsNullOrEmpty(workDir))  sb.AppendLine($"Path={workDir}");
+            if (!string.IsNullOrEmpty(iconLocation)) sb.AppendLine($"Icon={iconLocation}");
+            sb.AppendLine("X-GNOME-Autostart-enabled=true");
+            File.WriteAllText(shortcutPath, sb.ToString(), Encoding.UTF8);
+            return;
+          }
+
             Wsh.WshShell shell = null;
             Wsh.IWshShortcut shortcut = null;
             try {
@@ -110,6 +126,27 @@ namespace Shapoco.Platforms.Common {
         /// 指定されたディレクトリから、指定されたファイルをターゲットとするショートカットファイルを検索する
         /// </summary>
         public static IEnumerable<string> FindShortcut(string searchDir, string targetPath) {
+            // Linux
+            if (Platform.IsMono()) {
+              if (!Directory.Exists(searchDir))
+                yield break;
+              foreach (var file in Directory.GetFiles(searchDir, "*.desktop")) {
+                string execLine = null;
+                try {
+                  execLine = File.ReadLines(file)
+                    .FirstOrDefault(l => l.StartsWith("Exec=", StringComparison.OrdinalIgnoreCase));
+                } catch { continue; }
+                if (execLine == null) continue;
+
+                var execPath = execLine.Substring(5).Trim() .Split(' ').First() .Trim('"');
+
+                if (execPath == targetPath)
+                  yield return file;
+              }
+              yield break;
+            }
+
+            // Windows
             targetPath = targetPath.ToLower(); // 大小文字同一視のため小文字化
 
             var shell = new Wsh.IWshShell_Class();
@@ -138,9 +175,16 @@ namespace Shapoco.Platforms.Common {
         /// </summary>
         public static string StartupPath {
             get {
+              if (Platform.IsMono()) {
+                // XDG 互換: ~/.config/autostart
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                    ".config", "autostart");
+              } else {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Programs),
                     "Startup");
+              }
             }
         }
 
@@ -148,6 +192,14 @@ namespace Shapoco.Platforms.Common {
         /// 指定されたファイルのリンク先パスを取得する
         /// </summary>
         public static string GetLinkTargetOf(string linkFilePath) {
+            // Linux
+            if (Platform.IsMono()) {
+              var execLine = File.ReadLines(linkFilePath)
+                .FirstOrDefault(l => l.StartsWith("Exec=", StringComparison.OrdinalIgnoreCase));
+              if (execLine == null) throw new InvalidDataException("Exec= not found");
+              return execLine.Substring(5).Trim().Split(' ').First().Trim('"');
+            }
+            // Windows
             Wsh.IWshShell_Class shell = null;
             Wsh.IWshShortcut_Class shortcut = null;
             try {
