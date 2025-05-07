@@ -1,3 +1,72 @@
+# Calctus-linux
+
+Calctus（[shapoco/calctus](https://github.com/shapoco/calctus)）のMono/Linux環境対応フォークです。
+
+元のCalctusはWindowsを対象にしていますが、.NET Frameworkで開発されているため、.NET FrameworkのOSS実装である[Mono](https://www.mono-project.com/)をランタイムとして用いることでLinuxでの動作の可能性があります。
+
+このフォークではMonoの一部非互換な機能やCalctusのWindows依存の記述に多少の変更を加えることでLinuxでの動作を可能にしていますが、同じバイナリをWindowsで実行すれば従来通りの動作をする（はず）のユニバーサルなバイナリです。
+
+## 実行方法
+### Monoのビルド＆コンパイル
+MonoはWineHQに移管（[https://gitlab.winehq.org/mono/mono](https://gitlab.winehq.org/mono/mono)）されて以降、バイナリの配布をしていません。最新版をインストールするには、ソースコードからビルドする必要があります。
+
+（実行には必ずしも最新版のMonoが必要というわけではありませんが、わざわざLinuxでCalctusを動かしたいと思っている人はビルドした方が幸せになれると思います）
+```
+# ビルドツール
+sudo apt-get install git autoconf libtool automake build-essential gettext cmake python3 curl
+
+# mono
+wget https://dl.winehq.org/mono/sources/mono/mono-6.14.0.tar.xz
+tar -xvf mono-6.14.0.tar.xz
+cd mono-6.14.0
+./configure --prefix=/usr/local
+make
+sudo make install
+cd ..
+
+# libgdiplus
+wget https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
+tar -xvf libgdiplus-6.2.tar.gz
+cd libgdiplus-6.2
+./configure --prefix=/usr/local
+make
+sudo make install
+```
+### Calctusの起動
+```
+mono Calctus.exe
+```
+## 既知のバグ
+- HotKeyを登録するとクラッシュする
+- アルファベットを数文字入力するときに非常に動作が遅くなる
+- plotウィンドウがメインウインドウの裏に隠れることがある
+- plotウィンドウや設定ウィンドウが不意に消えることがある
+
+## 変更リスト
+以下は基本的にMonoで実行した時のみ適用される変更です。
+- DeviceDpiをDpiXにフォールバック
+- 候補フォームを別ウィンドウではなくメインウィンドウの中に表示
+- 候補フォームが出た瞬間消えてぬるぽするバグをアドホックに修正
+- 候補フォームをクリックすると消えてぬるぽするバグをアドホックに修正
+- 自動起動設定で ~/.config/autostart/Calctus.desktop を生成
+- タスクトレイからの復帰でクラッシュするのを修正
+- Sampleフォルダの探索のWindows依存解消
+- 設定画面のHotKey登録部分がはみ出しているのを修正
+
+## Q&A
+- Wineでいいんじゃない？
+    - Monoの方がメモリ負荷が軽い、気がします。
+    - 候補表示はWineの方が軽いですが、plotの表示はMonoの方が滑らか、な気がします。
+    - Wineでも一部機能は例外を吐くのでちゃんと使うなら変更が必要です。
+    - ロマン
+- ビルドもMonoでできるの？
+    - Windows用のdllをリンクするところで失敗するので無理です。Visual Studio（というかmsbuild）を使ってください。
+    - ユニバーサル化を諦めてLinux専用ビルドをするなら可能です。
+
+以下はオリジナルのREADME
+
+----
+
 # Calctus
 
 Calctus (カルクタス) is a calculator application for Windows developed for engineers.
@@ -9,6 +78,8 @@ Calctus (カルクタス) is a calculator application for Windows developed for 
 ## Download
 
 → See [releases](https://github.com/shapoco/calctus/releases).
+
+上はオリジナル版。Mono/Linux対応版は->[https://github.com/ponzu840w/calctus-linux/releases](https://github.com/ponzu840w/calctus-linux/releases)
 
 ----
 
