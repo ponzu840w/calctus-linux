@@ -8,7 +8,8 @@ using System.Runtime.InteropServices;
 using Shapoco.Platforms;
 
 // Windows Script Host Object Model を参照設定すること
-using Wsh = IWshRuntimeLibrary;
+// mono動作時に不具合があることがあるので遅延バインド化
+//using Wsh = IWshRuntimeLibrary;
 
 namespace Shapoco.Platforms.Common {
     public static class StartupShortcut {
@@ -89,6 +90,7 @@ namespace Shapoco.Platforms.Common {
             string arguments = "",
             string iconLocation = null) {
 
+          // Linux
           if (Platform.IsMono()) {
             Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath));
             var sb = new StringBuilder();
@@ -107,30 +109,35 @@ namespace Shapoco.Platforms.Common {
             return;
           }
 
-            Wsh.WshShell shell = null;
-            Wsh.IWshShortcut shortcut = null;
-            try {
-                shell = new Wsh.WshShell();
-                shortcut = shell.CreateShortcut(shortcutPath);
-                shortcut.TargetPath = targetPath;
+          // Windows
+          dynamic shell = null;
+          dynamic shortcut = null;
+          try {
+            // WScript.Shell の ProgID から型を取得
+            var shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType == null) throw new PlatformNotSupportedException("WScript.Shell not found");
 
-                if (!string.IsNullOrEmpty(workDir)) shortcut.WorkingDirectory = workDir;
-                if (!string.IsNullOrEmpty(arguments)) shortcut.Arguments = arguments;
-                //shortcut.Hotkey = "Ctrl+Alt+Shift+F12";
-                //shortcut.WindowStyle = 1;
-                //shortcut.Description = "テストのアプリケーション";
-                if (!string.IsNullOrEmpty(iconLocation)) shortcut.IconLocation = iconLocation;
+            shell = Activator.CreateInstance(shellType);
+            shortcut = shell.CreateShortcut(shortcutPath);
+            shortcut.TargetPath = targetPath;
 
-                shortcut.Save();
+            if (!string.IsNullOrEmpty(workDir)) shortcut.WorkingDirectory = workDir;
+            if (!string.IsNullOrEmpty(arguments)) shortcut.Arguments = arguments;
+            //shortcut.Hotkey = "Ctrl+Alt+Shift+F12";
+            //shortcut.WindowStyle = 1;
+            //shortcut.Description = "テストのアプリケーション";
+            if (!string.IsNullOrEmpty(iconLocation)) shortcut.IconLocation = iconLocation;
+
+            shortcut.Save();
 #if DEBUG
-                Console.WriteLine($"Create shortcut (windows): {shortcutPath}");
+            Console.WriteLine($"Create shortcut (windows): {shortcutPath}");
 #endif
-            }
-            catch (Exception ex) { throw ex; }
-            finally {
-                if (shortcut != null) Marshal.FinalReleaseComObject(shortcut);
-                if (shell != null) Marshal.FinalReleaseComObject(shell);
-            }
+          } catch (Exception ex) {
+            Console.Error.WriteLine($"Failed to create .lnk shortcut: {ex.Message}");
+          } finally {
+            if (shortcut != null) Marshal.FinalReleaseComObject(shortcut);
+            if (shell != null) Marshal.FinalReleaseComObject(shell);
+          }
         }
 
         /// <summary>
@@ -160,12 +167,14 @@ namespace Shapoco.Platforms.Common {
             // Windows
             targetPath = targetPath.ToLower(); // 大小文字同一視のため小文字化
 
-            var shell = new Wsh.IWshShell_Class();
+            var shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType == null) yield break;
+            dynamic shell = Activator.CreateInstance(shellType);
             foreach (var linkFilePath in Directory.GetFiles(StartupPath)) {
                 bool hit = false;
-                Wsh.IWshShortcut_Class shortcut = null;
+                dynamic shortcut = null;
                 try {
-                    shortcut = (Wsh.IWshShortcut_Class)shell.CreateShortcut(linkFilePath);
+                    shortcut = shell.CreateShortcut(linkFilePath);
                     hit = (shortcut.TargetPath.ToLower() == targetPath); // 小文字化して比較
                 }
                 catch (Exception) { }
