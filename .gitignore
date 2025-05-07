@@ -351,3 +351,6 @@ MigrationBackup/
 
 releases/
 materials/
+build-dir/
+com.example.CalctusLinux/
+.flatpak-builder/

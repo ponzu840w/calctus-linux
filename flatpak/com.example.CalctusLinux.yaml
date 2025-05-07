@@ -1,21 +1,45 @@
 app-id: com.example.CalctusLinux
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.mono6
-command: myguiapp
-finish-args:
-  - --socket=x11
-  - --socket=wayland
-  - --device=dri
+command: app
 
 modules:
-  - name: myguiapp
+  - name: mono6-runtime
+    buildsystem: simple
+    sources:
+      - type: file
+        path: ../flatpak/install-mono6.sh
+        dest: ./
+    build-commands:
+      - chmod +x install-mono6.sh
+      - ./install-mono6.sh
+
+  - name: libgdiplus
+    buildsystem: simple
+    sources:
+      - type: archive
+        url: https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
+        sha256: 683adb7d99d03f6ee7985173a206a2243f76632682334ced4cae2fcd20c83bc9
+    build-commands:
+      - ./configure --prefix=$FLATPAK_DEST/usr --disable-static
+      - make
+      - make install
+
+  - name: app
     buildsystem: simple
     sources:
       - type: dir
-        path: ./
+        path: ../
     build-commands:
-      - install -Dm755 ../bin/Release/Calctus.exe ${FLATPAK_DEST}/bin/Calctus.exe
-      - install -Dm755 run.sh         ${FLATPAK_DEST}/bin/myguiapp
+      - install -Dm755 bin/Debug/Calctus.exe ${FLATPAK_DEST}/bin/Calctus.exe
+      - install -Dm755 flatpak/run.sh          ${FLATPAK_DEST}/bin/app
+
+finish-args:
+  - --env=LD_LIBRARY_PATH=/app/usr/lib:$LD_LIBRARY_PATH
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --share=network
