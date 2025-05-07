@@ -1,0 +1,21 @@
+app-id: com.example.CalctusLinux
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.mono6
+command: myguiapp
+finish-args:
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+
+modules:
+  - name: myguiapp
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ./
+    build-commands:
+      - install -Dm755 ../bin/Release/Calctus.exe ${FLATPAK_DEST}/bin/Calctus.exe
+      - install -Dm755 run.sh         ${FLATPAK_DEST}/bin/myguiapp
