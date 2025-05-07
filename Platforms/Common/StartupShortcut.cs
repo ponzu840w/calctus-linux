@@ -70,6 +70,9 @@ namespace Shapoco.Platforms.Common {
                 foreach (var shortcutPath in FindShortcut(StartupPath, appPath)) {
                     try {
                         File.Delete(shortcutPath);
+#if DEBUG
+                        Console.WriteLine($"Delete shortcut: {shortcutPath}");
+#endif
                     }
                     catch (Exception) { }
                 }
@@ -91,11 +94,16 @@ namespace Shapoco.Platforms.Common {
             var sb = new StringBuilder();
             sb.AppendLine("[Desktop Entry]");
             sb.AppendLine("Type=Application");
-            sb.AppendLine($"Exec=\"{targetPath}\" {arguments}");
+            sb.AppendLine($"Exec=mono \"{targetPath}\" {arguments}");
             if (!string.IsNullOrEmpty(workDir))  sb.AppendLine($"Path={workDir}");
             if (!string.IsNullOrEmpty(iconLocation)) sb.AppendLine($"Icon={iconLocation}");
             sb.AppendLine("X-GNOME-Autostart-enabled=true");
-            File.WriteAllText(shortcutPath, sb.ToString(), Encoding.UTF8);
+            // BOMなしでないと実行されない
+            System.Text.Encoding enc = new System.Text.UTF8Encoding(false);
+            File.WriteAllText(shortcutPath, sb.ToString(), enc);
+#if DEBUG
+            Console.WriteLine($"Create shortcut (linux): {shortcutPath}");
+#endif
             return;
           }
 
@@ -114,6 +122,9 @@ namespace Shapoco.Platforms.Common {
                 if (!string.IsNullOrEmpty(iconLocation)) shortcut.IconLocation = iconLocation;
 
                 shortcut.Save();
+#if DEBUG
+                Console.WriteLine($"Create shortcut (windows): {shortcutPath}");
+#endif
             }
             catch (Exception ex) { throw ex; }
             finally {
@@ -134,11 +145,11 @@ namespace Shapoco.Platforms.Common {
                 string execLine = null;
                 try {
                   execLine = File.ReadLines(file)
-                    .FirstOrDefault(l => l.StartsWith("Exec=", StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
                 } catch { continue; }
                 if (execLine == null) continue;
 
-                var execPath = execLine.Substring(5).Trim() .Split(' ').First() .Trim('"');
+                var execPath = execLine.Substring(10).Trim() .Split(' ').First() .Trim('"');
 
                 if (execPath == targetPath)
                   yield return file;
@@ -195,9 +206,9 @@ namespace Shapoco.Platforms.Common {
             // Linux
             if (Platform.IsMono()) {
               var execLine = File.ReadLines(linkFilePath)
-                .FirstOrDefault(l => l.StartsWith("Exec=", StringComparison.OrdinalIgnoreCase));
-              if (execLine == null) throw new InvalidDataException("Exec= not found");
-              return execLine.Substring(5).Trim().Split(' ').First().Trim('"');
+                .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
+              if (execLine == null) throw new InvalidDataException("Exec=mono not found");
+              return execLine.Substring(10).Trim().Split(' ').First().Trim('"');
             }
             // Windows
             Wsh.IWshShell_Class shell = null;
