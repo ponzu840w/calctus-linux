@@ -199,30 +199,5 @@ namespace Shapoco.Platforms.Common {
             }
         }
 
-        /// <summary>
-        /// 指定されたファイルのリンク先パスを取得する
-        /// </summary>
-        public static string GetLinkTargetOf(string linkFilePath) {
-            // Linux
-            if (Platform.IsMono()) {
-              var execLine = File.ReadLines(linkFilePath)
-                .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
-              if (execLine == null) throw new InvalidDataException("Exec=mono not found");
-              return execLine.Substring(10).Trim().Split(' ').First().Trim('"');
-            }
-            // Windows
-            Wsh.IWshShell_Class shell = null;
-            Wsh.IWshShortcut_Class shortcut = null;
-            try {
-                shell = new Wsh.IWshShell_Class();
-                shortcut = (Wsh.IWshShortcut_Class)shell.CreateShortcut(linkFilePath);
-                return shortcut.TargetPath;
-            }
-            catch (Exception ex) { throw ex; }
-            finally {
-                if (shortcut != null) Marshal.FinalReleaseComObject(shortcut);
-                if (shell != null) Marshal.FinalReleaseComObject(shell);
-            }
-        }
     }
 }
