@@ -2,6 +2,8 @@
 
 Calctus（[shapoco/calctus](https://github.com/shapoco/calctus)）のMono/Linux環境対応フォークです。
 
+![Screen Shot](img/linux.jpg)
+
 元のCalctusはWindowsを対象にしていますが、.NET Frameworkで開発されているため、.NET FrameworkのOSS実装である[Mono](https://www.mono-project.com/)をランタイムとして用いることでLinuxでの動作の可能性があります。
 
 このフォークではMonoの一部非互換な機能やCalctusのWindows依存の記述に多少の変更を加えることでLinuxでの動作を可能にしていますが、同じバイナリをWindowsで実行すれば従来通りの動作をする（はず）のユニバーサルなバイナリです。
