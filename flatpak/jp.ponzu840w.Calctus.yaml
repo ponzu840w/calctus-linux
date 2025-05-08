@@ -44,6 +44,7 @@ modules:
 
 finish-args:
   - --env=LD_LIBRARY_PATH=/app/usr/lib:$LD_LIBRARY_PATH
+  - --filesystem=xdg-config/autostart
   - --socket=x11
   - --socket=wayland
   - --device=dri

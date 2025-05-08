@@ -109,7 +109,14 @@ namespace Shapoco.Platforms.Common {
           var sb = new StringBuilder();
           sb.AppendLine("[Desktop Entry]");
           sb.AppendLine("Type=Application");
-          sb.AppendLine($"Exec=mono \"{targetPath}\" {arguments}");
+
+          string execLine;
+          if (Platform.IsFlatpak() && Platform.GetFlatpakAppId() is string appId)
+              execLine = $"flatpak run {appId} {arguments}".TrimEnd();
+          else
+              execLine = $"mono \"{targetPath}\" {arguments}".TrimEnd();
+          sb.AppendLine($"Exec={execLine}");
+
           if (!string.IsNullOrEmpty(workDir))  sb.AppendLine($"Path={workDir}");
           if (!string.IsNullOrEmpty(iconLocation)) sb.AppendLine($"Icon={iconLocation}");
           sb.AppendLine("X-GNOME-Autostart-enabled=true");
@@ -176,10 +183,14 @@ namespace Shapoco.Platforms.Common {
 
             try {
               execLine = File.ReadLines(file)
-                .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(l => l.StartsWith("Exec=", StringComparison.OrdinalIgnoreCase));
             } catch { continue; }
 
             if (execLine == null) continue;
+
+            if (execLine.StartsWith("Exec=flatpak run ", StringComparison.OrdinalIgnoreCase) &&
+                Platform.IsFlatpak() && execLine.EndsWith(Platform.GetFlatpakAppId()))
+              yield return file;
 
             var execPath = execLine.Substring(10).Trim() .Split(' ').First() .Trim('"');
 
