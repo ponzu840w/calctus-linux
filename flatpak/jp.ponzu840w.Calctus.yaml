@@ -30,12 +30,17 @@ modules:
 
   - name: app
     buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/mono6/bin
+      append-ld-library-path: /app/usr/lib
     sources:
       - type: dir
         path: ../
     build-commands:
-      - install -Dm755 bin/Debug/Calctus.exe ${FLATPAK_DEST}/bin/Calctus.exe
-      - install -Dm755 flatpak/run.sh          ${FLATPAK_DEST}/bin/app
+      - msbuild Calctus.sln /p:Configuration=Debug
+      - mkdir -p                      ${FLATPAK_DEST}/bin
+      - cp -r bin/Debug/Calctus.exe   ${FLATPAK_DEST}/bin
+      - install -Dm755 flatpak/run.sh ${FLATPAK_DEST}/bin/app
 
 finish-args:
   - --env=LD_LIBRARY_PATH=/app/usr/lib:$LD_LIBRARY_PATH
