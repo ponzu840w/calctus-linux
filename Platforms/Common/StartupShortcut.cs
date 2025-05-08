@@ -88,28 +88,47 @@ namespace Shapoco.Platforms.Common {
             string targetPath,
             string workDir = null,
             string arguments = "",
-            string iconLocation = null) {
-
-          // Linux
-          if (Platform.IsMono()) {
-            Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath));
-            var sb = new StringBuilder();
-            sb.AppendLine("[Desktop Entry]");
-            sb.AppendLine("Type=Application");
-            sb.AppendLine($"Exec=mono \"{targetPath}\" {arguments}");
-            if (!string.IsNullOrEmpty(workDir))  sb.AppendLine($"Path={workDir}");
-            if (!string.IsNullOrEmpty(iconLocation)) sb.AppendLine($"Icon={iconLocation}");
-            sb.AppendLine("X-GNOME-Autostart-enabled=true");
-            // BOMなしでないと実行されない
-            System.Text.Encoding enc = new System.Text.UTF8Encoding(false);
-            File.WriteAllText(shortcutPath, sb.ToString(), enc);
-#if DEBUG
-            Console.WriteLine($"Create shortcut (linux): {shortcutPath}");
-#endif
-            return;
+            string iconLocation = null)
+        {
+          if(Platform.IsMono()) {
+            CreateShortcutMono(shortcutPath, targetPath, workDir, arguments, iconLocation);
+          } else {
+            CreateShortcutWindows(shortcutPath, targetPath, workDir, arguments, iconLocation);
           }
+          return;
+        }
 
-          // Windows
+        public static void CreateShortcutMono(
+            string shortcutPath,
+            string targetPath,
+            string workDir = null,
+            string arguments = "",
+            string iconLocation = null)
+        {
+          Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath));
+          var sb = new StringBuilder();
+          sb.AppendLine("[Desktop Entry]");
+          sb.AppendLine("Type=Application");
+          sb.AppendLine($"Exec=mono \"{targetPath}\" {arguments}");
+          if (!string.IsNullOrEmpty(workDir))  sb.AppendLine($"Path={workDir}");
+          if (!string.IsNullOrEmpty(iconLocation)) sb.AppendLine($"Icon={iconLocation}");
+          sb.AppendLine("X-GNOME-Autostart-enabled=true");
+          // BOMなしでないと実行されない
+          System.Text.Encoding enc = new System.Text.UTF8Encoding(false);
+          File.WriteAllText(shortcutPath, sb.ToString(), enc);
+#if DEBUG
+          Console.WriteLine($"Create shortcut (linux): {shortcutPath}");
+#endif
+          return;
+        }
+
+        public static void CreateShortcutWindows(
+            string shortcutPath,
+            string targetPath,
+            string workDir = null,
+            string arguments = "",
+            string iconLocation = null)
+        {
           dynamic shell = null;
           dynamic shortcut = null;
           try {
@@ -144,27 +163,33 @@ namespace Shapoco.Platforms.Common {
         /// 指定されたディレクトリから、指定されたファイルをターゲットとするショートカットファイルを検索する
         /// </summary>
         public static IEnumerable<string> FindShortcut(string searchDir, string targetPath) {
-            // Linux
-            if (Platform.IsMono()) {
-              if (!Directory.Exists(searchDir))
-                yield break;
-              foreach (var file in Directory.GetFiles(searchDir, "*.desktop")) {
-                string execLine = null;
-                try {
-                  execLine = File.ReadLines(file)
-                    .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
-                } catch { continue; }
-                if (execLine == null) continue;
+          return Platform.IsMono()
+            ? FindShortcutMono(searchDir, targetPath)
+            : FindShortcutWindows(searchDir, targetPath);
+        }
 
-                var execPath = execLine.Substring(10).Trim() .Split(' ').First() .Trim('"');
+        public static IEnumerable<string> FindShortcutMono(string searchDir, string targetPath) {
+          if (!Directory.Exists(searchDir)) yield break;
 
-                if (execPath == targetPath)
-                  yield return file;
-              }
-              yield break;
-            }
+          foreach (var file in Directory.GetFiles(searchDir, "*.desktop")) {
+            string execLine = null;
 
-            // Windows
+            try {
+              execLine = File.ReadLines(file)
+                .FirstOrDefault(l => l.StartsWith("Exec=mono ", StringComparison.OrdinalIgnoreCase));
+            } catch { continue; }
+
+            if (execLine == null) continue;
+
+            var execPath = execLine.Substring(10).Trim() .Split(' ').First() .Trim('"');
+
+            if (execPath == targetPath)
+              yield return file;
+          }
+          yield break;
+        }
+
+        public static IEnumerable<string> FindShortcutWindows(string searchDir, string targetPath) {
             targetPath = targetPath.ToLower(); // 大小文字同一視のため小文字化
 
             var shellType = Type.GetTypeFromProgID("WScript.Shell");
@@ -187,7 +212,6 @@ namespace Shapoco.Platforms.Common {
             }
 
             if (shell != null) Marshal.FinalReleaseComObject(shell);
-
         }
 
         /// <summary>
