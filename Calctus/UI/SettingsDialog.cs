@@ -160,7 +160,9 @@ namespace Shapoco.Calctus.UI {
 
         private void SettingsDialog_Load(object sender, EventArgs e) {
             var s = Settings.Instance;
+#if !DEBUG
             try {
+#endif
                 Startup_AutoStart.Checked = Shapoco.Platforms.Common.StartupShortcut.CheckStartupRegistration();
 
                 Startup_TrayIcon.Checked = s.Startup_TrayIcon;
@@ -217,8 +219,10 @@ namespace Shapoco.Calctus.UI {
 
                 Script_Enable.Checked = scriptGroup.Enabled = s.Script_Enable;
                 Script_FolderPath.Text = s.Script_FolderPath;
+#if !DEBUG
             }
             catch { }
+#endif
         }
 
         private void setNudValue(NumericUpDown nud, int value) {

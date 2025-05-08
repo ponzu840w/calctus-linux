@@ -1,4 +1,4 @@
-app-id: com.example.CalctusLinux
+app-id: jp.ponzu840w.Calctus
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
