@@ -111,7 +111,8 @@ namespace Shapoco.Calctus.UI {
 
             settingsButton.Click += SettingsButton_Click;
             topMostButton.Click += TopMostButton_Click;
-            helpButton.Click += (sender, e) => { System.Diagnostics.Process.Start(@"https://github.com/shapoco/calctus"); };
+//            helpButton.Click += (sender, e) => { System.Diagnostics.Process.Start(@"https://github.com/shapoco/calctus"); };
+            helpButton.Click += (sender, e) => { System.Diagnostics.Process.Start(@"https://github.com/ponzu840w/calctus-linux"); };
 
             contextOpen.Click += (sender, e) => { showForeground(); };
             contextExit.Click += (sender, e) => { appExit(); };
