@@ -23,7 +23,7 @@ modules:
         url: https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
         sha256: 683adb7d99d03f6ee7985173a206a2243f76632682334ced4cae2fcd20c83bc9
     build-commands:
-      - ./configure --prefix=$FLATPAK_DEST/usr --disable-static
+      - ./configure --prefix=$FLATPAK_DEST/bin/usr --disable-static
       - make
       - make install
 
@@ -42,7 +42,7 @@ modules:
     buildsystem: simple
     build-options:
       append-path: /usr/lib/sdk/mono6/bin
-      append-ld-library-path: /app/usr/lib
+      append-ld-library-path: /app/bin/usr/lib
     sources:
       - type: git
         url: https://github.com/ponzu840w/calctus-linux
@@ -70,10 +70,10 @@ modules:
       - mkdir -p ${FLATPAK_DEST}/share/applications
       - install -Dm644 jp.ponzu840w.Calctus.desktop                       -t ${FLATPAK_DEST}/share/applications
       - install -Dm644 icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png  -t ${FLATPAK_DEST}/share/icons/hicolor/48x48/apps
-      - install -Dm644 jp.ponzu840w.Calctus.metainfo.xml                  -t ${FLATPAK_DEST}/share/metainfo
+        #      - install -Dm644 jp.ponzu840w.Calctus.metainfo.xml                  -t ${FLATPAK_DEST}/share/metainfo
 
 finish-args:
-  - --env=LD_LIBRARY_PATH=/app/usr/lib:$LD_LIBRARY_PATH
+  - --env=LD_LIBRARY_PATH=/app/bin/usr/lib:$LD_LIBRARY_PATH
   - --filesystem=xdg-config/autostart
   - --socket=x11
   - --socket=wayland
