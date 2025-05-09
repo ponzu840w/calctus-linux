@@ -1,4 +1,4 @@
-app-id: jp.ponzu840w.Calctus
+app-id: local.jp.ponzu840w.Calctus
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
@@ -10,24 +10,22 @@ modules:
   - name: libgdiplus
     buildsystem: simple
     sources:
-      - type: archive
-        url: https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
-        sha256: 683adb7d99d03f6ee7985173a206a2243f76632682334ced4cae2fcd20c83bc9
+      - type: file
+        path: /usr/lib/libgdiplus.so.0.0.0
+        dest: ./
     build-commands:
-      - ./configure --prefix=$FLATPAK_DEST/usr --disable-static
-      - make
-      - make install
+      - mkdir -p                  ${FLATPAK_DEST}/usr/lib
+      - cp -r libgdiplus.so.0.0.0 ${FLATPAK_DEST}/usr/lib/libgdiplus.so.0
 
   - name: mono6-runtime
     buildsystem: simple
     sources:
-      - type: git
-        url: https://github.com/ponzu840w/calctus-linux
-        branch: flatpak-test
-        dest: .
+      - type: file
+        path: ../flatpak/install-mono6.sh
+        dest: ./
     build-commands:
-      - chmod +x flatpak/install-mono6.sh
-      - ./flatpak/install-mono6.sh
+      - chmod +x install-mono6.sh
+      - ./install-mono6.sh
 
   - name: app
     buildsystem: simple
@@ -35,14 +33,12 @@ modules:
       append-path: /usr/lib/sdk/mono6/bin
       append-ld-library-path: /app/usr/lib
     sources:
-      - type: git
-        url: https://github.com/ponzu840w/calctus-linux
-        branch: flatpak-test
-        dest: .
+      - type: dir
+        path: ../
     build-commands:
-      - msbuild Calctus.sln /p:Configuration=Release
+      - msbuild Calctus.sln /p:Configuration=Debug
       - mkdir -p                      ${FLATPAK_DEST}/bin
-      - cp -r bin/Release/Calctus.exe   ${FLATPAK_DEST}/bin
+      - cp -r bin/Debug/Calctus.exe   ${FLATPAK_DEST}/bin
       - install -Dm755 flatpak/run.sh ${FLATPAK_DEST}/bin/app
 
 finish-args:
@@ -51,4 +47,3 @@ finish-args:
   - --socket=x11
   - --socket=wayland
   - --device=dri
-  - --share=network
