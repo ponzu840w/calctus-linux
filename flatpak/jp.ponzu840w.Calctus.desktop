@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Calctus
+Comment=High-precision C# calculator
+Exec=app
+Icon=jp.ponzu840w.Calctus
+Categories=Utility;Development;
+StartupNotify=true

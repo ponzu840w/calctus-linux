@@ -1,10 +1,19 @@
 app-id: local.jp.ponzu840w.Calctus
+name: Calctus
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.mono6
 command: app
+
+description: |
+  Calctus is a calculator application developed for engineers.
+  Originally developed for Windows, this is an unofficial version for Linux.
+license: MIT
+url:
+  - "https://github.com/shapoco/calctus"
+  - "https://github.com/ponzu840w/calctus-linux"
 
 modules:
   - name: libgdiplus
@@ -36,10 +45,32 @@ modules:
       - type: dir
         path: ../
     build-commands:
+      - cp /app/usr/lib/libgdiplus.so.0 /app/usr/lib/libgdiplus.so
+      - cp /app/usr/lib/libgdiplus.so /app/usr/lib/libgdiplus.so.0
       - msbuild Calctus.sln /p:Configuration=Debug
       - mkdir -p                      ${FLATPAK_DEST}/bin
       - cp -r bin/Debug/Calctus.exe   ${FLATPAK_DEST}/bin
       - install -Dm755 flatpak/run.sh ${FLATPAK_DEST}/bin/app
+
+  - name: metadata
+    buildsystem: simple
+    sources:
+      - type: file
+        path: jp.ponzu840w.Calctus.desktop
+        dest: .
+      - type: file
+        path: icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png
+        dest: icons/hicolor/48x48/apps
+      - type: file
+        path: jp.ponzu840w.Calctus.metainfo.xml
+        dest: .
+    build-commands:
+      - install -Dm644 jp.ponzu840w.Calctus.desktop \
+          ${FLATPAK_DEST}/share/applications/jp.ponzu840w.Calctus.desktop
+      - install -Dm644 icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png \
+          ${FLATPAK_DEST}/share/icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png
+      - install -Dm644 jp.ponzu840w.Calctus.metainfo.xml \
+          ${FLATPAK_DEST}/share/metainfo/jp.ponzu840w.Calctus.metainfo.xml
 
 finish-args:
   - --env=LD_LIBRARY_PATH=/app/usr/lib:$LD_LIBRARY_PATH

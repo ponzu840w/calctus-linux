@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>jp.ponzu840w.Calctus</id>
+  
+  <name>Calctus</name>
+  <summary>Calculator application developed for engineers.</summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <url type="homepage">https://github.com/shapoco/calctus</url>
+  <url type="distribution">https://github.com/ponzu840w/calctus-linux</url>
+  
+  <description>
+    <p>
+      Calctus is a calculator application developed for engineers. Originally developed for Windows, this is an unofficial version for Linux.
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">jp.ponzu840w.Calctus.desktop</launchable>
+</component>
