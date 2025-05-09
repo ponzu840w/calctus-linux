@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Calctus
-Comment=High-precision C# calculator
+Comment=Calculator application developed for engineers.
 Exec=app
 Icon=jp.ponzu840w.Calctus
 Categories=Utility;Development;

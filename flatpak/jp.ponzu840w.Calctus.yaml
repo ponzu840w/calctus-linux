@@ -57,19 +57,14 @@ modules:
   - name: metadata
     buildsystem: simple
     sources:
-      - type: file
-        path: jp.ponzu840w.Calctus.desktop
-        dest: .
-      - type: file
-        path: icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png
-        dest: icons/hicolor/48x48/apps
-      - type: file
-        path: jp.ponzu840w.Calctus.metainfo.xml
+      - type: git
+        url: https://github.com/ponzu840w/calctus-linux
+        branch: flatpak-test
         dest: .
     build-commands:
-      - mkdir -p ${FLATPAK_DEST}/share/applications
-      - install -Dm644 jp.ponzu840w.Calctus.desktop                       -t ${FLATPAK_DEST}/share/applications
-      - install -Dm644 icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png  -t ${FLATPAK_DEST}/share/icons/hicolor/48x48/apps
+      - install -Dm644 flatpak/jp.ponzu840w.Calctus.desktop                       -t ${FLATPAK_DEST}/share/applications
+      - install -Dm644 flatpak/icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png  -t ${FLATPAK_DEST}/share/icons/hicolor/48x48/apps
+      - install -Dm644 flatpak/icons/hicolor/256x256/apps/jp.ponzu840w.Calctus.png  -t ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps
         #      - install -Dm644 jp.ponzu840w.Calctus.metainfo.xml                  -t ${FLATPAK_DEST}/share/metainfo
 
 finish-args:
