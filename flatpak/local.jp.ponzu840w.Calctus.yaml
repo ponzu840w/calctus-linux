@@ -19,12 +19,13 @@ modules:
   - name: libgdiplus
     buildsystem: simple
     sources:
-      - type: file
-        path: /usr/lib/libgdiplus.so.0.0.0
-        dest: ./
+      - type: archive
+        url: https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
+        sha256: 683adb7d99d03f6ee7985173a206a2243f76632682334ced4cae2fcd20c83bc9
     build-commands:
-      - mkdir -p                  ${FLATPAK_DEST}/usr/lib
-      - cp -r libgdiplus.so.0.0.0 ${FLATPAK_DEST}/usr/lib/libgdiplus.so.0
+      - ./configure --prefix=$FLATPAK_DEST/usr --disable-static
+      - make
+      - make install
 
   - name: mono6-runtime
     buildsystem: simple
@@ -75,4 +76,4 @@ finish-args:
   - --filesystem=xdg-config/autostart
   - --socket=x11
   - --socket=wayland
-  - --device=dri
+  - --share=network   # remote x11
