@@ -45,8 +45,6 @@ modules:
       - type: dir
         path: ../
     build-commands:
-      - cp /app/usr/lib/libgdiplus.so.0 /app/usr/lib/libgdiplus.so
-      - cp /app/usr/lib/libgdiplus.so /app/usr/lib/libgdiplus.so.0
       - msbuild Calctus.sln /p:Configuration=Debug
       - mkdir -p                      ${FLATPAK_DEST}/bin
       - cp -r bin/Debug/Calctus.exe   ${FLATPAK_DEST}/bin
