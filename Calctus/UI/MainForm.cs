@@ -372,9 +372,16 @@ namespace Shapoco.Calctus.UI {
                 MessageBox.Show("Failed to load sheet:\r\n\r\n" + ex.Message,
                     Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            int major = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major;
+            int minor = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor;
+            int do_minor = 0; // 本家のマイナー番号に対してこちらのマイナー番号、ドマイナー番号。
+            int revis = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Revision;
+            int build = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Build;
+            string version_str = major + "." + minor + ".L" + do_minor + " [b:" + build + " r:" + revis + "]";
+
             this.Text =
                 Application.ProductName +
-                " (v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + ") - " +
+                " (v" + version_str + ") - " +
                 (_activeBookItem != null ? _activeBookItem.Name : "(null)");
 
             if (requestCheckFileChange) {
