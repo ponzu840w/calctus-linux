@@ -27,6 +27,23 @@ modules:
       - make
       - make install
 
+  - name: libgtk
+    buildsystem: simple
+    sources:
+      - type: archive
+        #        url: https://download.gnome.org/sources/gtk+/2.24/gtk%2B-2.24.33.tar.xz
+        #sha256: ac2ac757f5942d318a311a54b0c80b5ef295f299c2a73c632f6bfb1ff49cc6da
+        url: https://download.gnome.org/sources/gtk+/2.24/gtk%2B-2.24.0.tar.gz
+        sha256: 53a42e4b29edd72c43b74f8c9bec436ffe7c256aa0ef6d79c65cc5393afd0386
+    build-commands:
+      #      - sed -i   's|priv->adjustment = g_object_ref_sink *(obj);|g_return_if_fail(GTK_IS_ADJUSTMENT(obj)); priv->adjustment = GTK_ADJUSTMENT(g_object_ref_sink(obj));|'   gtk/gtkcellrendererspin.c
+      #      - sed -i 's|parser_data->object = g_object_ref (buildable);|g_return_if_fail (G_IS_OBJECT (buildable)); parser_data->object = G_OBJECT (g_object_ref (G_OBJECT (buildable)));|' gtk/gtkcomboboxtext.c
+      - ./configure --prefix=$FLATPAK_DEST/bin/usr --disable-static
+      - make
+      - mkdir -p /tmp/gtk2-staging
+      - make install DESTDIR=/tmp/gtk2-staging
+      - install -Dm644 /tmp/gtk2-staging/lib/libgtk-x11-2.0.so.0.2400.0 ${FLATPAK_DEST}/bin/usr/lib/libgtk-x11-2.0.so.0
+
   - name: mono6-runtime
     buildsystem: simple
     sources:
