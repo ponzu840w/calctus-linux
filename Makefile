@@ -11,28 +11,30 @@ PREFIX     ?= /usr/local
 # パッケージ用仮ルート
 DESTDIR    ?=
 # MSBuild コマンド
-MSBUILD    := xbuild
+MSBUILD    := $(if $(shell command -v msbuild 2>/dev/null),msbuild,xbuild)
 
 # ===== install dirs =====
 BINDIR     = $(DESTDIR)$(PREFIX)/bin
 SHAREDIR   = $(DESTDIR)$(PREFIX)/share/$(APP)
 DATADIR    = $(DESTDIR)$(PREFIX)/share
 DESKTOPDIR = $(DATADIR)/applications
-ICONDSTDIR = $(DATADIR)/icons/hicolor/256x256/apps
+ICON_DIR   = $(DATADIR)/icons/hicolor
+ICON48DIR  = $(ICON_DIR)/48x48/apps
+ICON256DIR = $(ICON_DIR)/256x256/apps
 
 # ===== targets =====
 .PHONY: all build install uninstall
 
 all: build
 
-# msbuild にすべて任せるビルド
+# msbuild/xbuild にすべて任せるビルド
 build:
 	@echo "Building $(APP) ($(CONFIG))..."
 	$(MSBUILD) $(SOLUTION) /p:Configuration=$(CONFIG)
 
 install: all
 	# ディレクトリ作成
-	install -d $(BINDIR) $(SHAREDIR) $(DESKTOPDIR) $(ICONDSTDIR)
+	install -d $(BINDIR) $(SHAREDIR) $(DESKTOPDIR) $(ICON48DIR) $(ICON256DIR)
 
 	# 実行ファイル本体を share 配下へ
 	install -m 755 bin/$(CONFIG)/$(APP_WIN).exe $(SHAREDIR)/$(APP_WIN).exe
@@ -49,9 +51,12 @@ install: all
 	  > $(DESKTOPDIR)/$(APP).desktop
 	chmod 644 $(DESKTOPDIR)/$(APP).desktop
 
-	# アイコン
-	if [ -f flatpak/icons/256x256.png ]; then \
-	  install -m 644 flatpak/icons/256x256.png $(ICONDSTDIR)/$(APP).png; \
+	# アイコン (48x48 と 256x256)
+	if [ -f flatpak/icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png ]; then \
+	  install -m 644 flatpak/icons/hicolor/48x48/apps/jp.ponzu840w.Calctus.png $(ICON48DIR)/$(APP).png; \
+	fi
+	if [ -f flatpak/icons/hicolor/256x256/apps/jp.ponzu840w.Calctus.png ]; then \
+	  install -m 644 flatpak/icons/hicolor/256x256/apps/jp.ponzu840w.Calctus.png $(ICON256DIR)/$(APP).png; \
 	fi
 
 	# キャッシュ更新
@@ -63,6 +68,7 @@ uninstall:
 	rm -f $(BINDIR)/$(APP)
 	rm -f $(SHAREDIR)/$(APP_WIN).exe
 	rm -f $(DESKTOPDIR)/$(APP).desktop
-	rm -f $(ICONDSTDIR)/$(APP).png
+	rm -f $(ICON48DIR)/$(APP).png
+	rm -f $(ICON256DIR)/$(APP).png
 	- update-desktop-database -q $(DATADIR)/applications || true
 	- gtk-update-icon-cache -q $(DATADIR)/icons/hicolor    || true
