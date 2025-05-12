@@ -61,7 +61,8 @@ install: all
 
 	# キャッシュ更新
 	- update-desktop-database -q $(DATADIR)/applications || true
-	- gtk-update-icon-cache -q $(DATADIR)/icons/hicolor    || true
+	- gtk-update-icon-cache -q $(DATADIR)/icons/hicolor  || true
+	- desktop-menu --write-out                           || true
 
 uninstall:
 	@echo "Removing $(APP) from $(PREFIX)..."
@@ -71,4 +72,5 @@ uninstall:
 	rm -f $(ICON48DIR)/$(APP).png
 	rm -f $(ICON256DIR)/$(APP).png
 	- update-desktop-database -q $(DATADIR)/applications || true
-	- gtk-update-icon-cache -q $(DATADIR)/icons/hicolor    || true
+	- gtk-update-icon-cache -q $(DATADIR)/icons/hicolor  || true
+	- desktop-menu --write-out                           || true
