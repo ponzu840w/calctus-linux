@@ -7,7 +7,7 @@ SOLUTION   := Calctus.sln
 # ビルド構成 (Debug/Release)
 CONFIG     ?= Release
 # デフォルトのインストール先
-PREFIX     ?= /usr/local
+PREFIX     ?= $(HOME)/.local
 # パッケージ用仮ルート
 DESTDIR    ?=
 # MSBuild コマンド

@@ -9,7 +9,7 @@ Calctus（[shapoco/calctus](https://github.com/shapoco/calctus)）のMono/Linux�
 このフォークではMonoの一部非互換な機能やCalctusのWindows依存の記述に多少の変更を加えることでLinuxでの動作を可能にしていますが、同じバイナリをWindowsで実行すれば従来通りの動作をする（はず）のユニバーサルなバイナリです。
 
 ## 実行方法
-### Monoのビルド＆コンパイル
+### Monoランタイムのビルド＆インストール
 MonoはWineHQに移管（[https://gitlab.winehq.org/mono/mono](https://gitlab.winehq.org/mono/mono)）されて以降、バイナリの配布をしていません。最新版をインストールするには、ソースコードからビルドする必要があります。
 
 （実行には必ずしも最新版のMonoが必要というわけではありませんが、わざわざLinuxでCalctusを動かしたいと思っている人はビルドした方が幸せになれると思います）
@@ -34,10 +34,25 @@ cd libgdiplus-6.2
 make
 sudo make install
 ```
-### Calctusの起動
+
+### Calctusを起動
 ```
 mono Calctus.exe
 ```
+
+### Calctusをソースからビルドしてインストール
+Monoがインストールされていれば、Calctusをソースからビルドしてインストールすることもできます。
+```
+# ビルド&インストール
+make
+make install
+```
+```
+# アンインストール
+make uninstall
+```
+インストールされたCalctusは`calctus`コマンドで起動できるほか、デスクトップ環境のメニューにも登録されています。
+
 ## 既知のバグ
 - HotKeyを登録するとクラッシュする
 - アルファベットを数文字入力するときに非常に動作が遅くなる
@@ -54,6 +69,7 @@ mono Calctus.exe
 - タスクトレイからの復帰でクラッシュするのを修正
 - Sampleフォルダの探索のWindows依存解消
 - 設定画面のHotKey登録部分がはみ出しているのを修正
+- Mono/LinuxでビルドできるようにWindows依存DLLを遅延バインド
 
 ## Q&A
 - Wineでいいんじゃない？
@@ -61,9 +77,6 @@ mono Calctus.exe
     - 候補表示はWineの方が軽いですが、plotの表示はMonoの方が滑らか、な気がします。
     - Wineでも一部機能は例外を吐くのでちゃんと使うなら変更が必要です。
     - ロマン
-- ビルドもMonoでできるの？
-    - Windows用のdllをリンクするところで失敗するので無理です。Visual Studio（というかmsbuild）を使ってください。
-    - ユニバーサル化を諦めてLinux専用ビルドをするなら可能です。
 
 以下はオリジナルのREADME
 
