@@ -175,12 +175,8 @@ namespace Shapoco.Calctus.UI.Sheets {
             g.DrawLine(Pens.Gray, 0, _list.Bottom + 10, ClientSize.Width, _list.Bottom - 10);
         }
 
-        protected override void Dispose(bool disposing) {
-            base.Dispose(disposing);
-            if (disposing) {
-                _list.Dispose();
-                _desc.Dispose();
-            }
+        public void SetProvider(IInputCandidateProvider provider) {
+            _provider = provider;
         }
 
         private void _list_SelectedIndexChanged(object sender, EventArgs e) {

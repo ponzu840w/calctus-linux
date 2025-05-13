@@ -31,6 +31,7 @@ namespace Shapoco.Calctus.UI.Sheets {
 
         public ExprBoxCore(GdiControl owner) : base(owner) {
             _owner = owner;
+            _edit.SetOwner(_owner);
             Focusable = true;
             Cursor = Cursors.IBeam;
             _layout = new ExprBoxCoreLayout(owner);
@@ -39,7 +40,6 @@ namespace Shapoco.Calctus.UI.Sheets {
             _edit.QueryScreenCursorLocation += Edit_QueryScreenCursorLocation;
             _edit.QueryToken += _edit_QueryToken;
             _layout.Layout(Text);
-            _edit.ParentControl = owner;
         }
 
         public string Text {

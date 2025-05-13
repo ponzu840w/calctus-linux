@@ -19,7 +19,7 @@ using Shapoco.Platforms;
 namespace Shapoco.Calctus.UI.Sheets {
     class ExprBoxCoreEdit {
         public bool IsCandidateShowProcess = false;   // CandidatesShow中の謎の消失現象を抑制
-        public Control ParentControl; // 親コントロール
+        private Control _exprBox;
         public static readonly Regex NonWordRegex = new Regex(@"\W");
         public static readonly Regex NonWordRtlRegex = new Regex(@"\W", RegexOptions.RightToLeft);
 
@@ -35,7 +35,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         private int _selStart = 0;
 
         public IInputCandidateProvider CandidateProvider;
-        private InputCandidateForm _candForm;
+        private CandidateFormManager _candForm = CandidateFormManager.Inst;
         private int _candKeyStart = 0, _candKeyEnd = 0;
 
         private Keys _pressedModifiers = Keys.None;
@@ -558,51 +558,33 @@ namespace Shapoco.Calctus.UI.Sheets {
             CursorStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public bool CandidatesAreShown() => (_candForm != null);
+        public bool CandidatesAreShown() => _candForm.AreShown();
 
         public void CandidatesShow() {
             if (CandidateProvider == null) return;
-            if (!CandidatesAreShown()) {
-                // monoでのアドホックな処理のための状態フラグ
-                IsCandidateShowProcess = true;
-                _candForm = new InputCandidateForm(CandidateProvider);
-                // 子フォームとするために親を指定
-                if (Platform.IsMono()) {
-                    _candForm.Parent = ParentControl;
-                }
-                _candForm.Visible = true;
-                // フォーカスを強制的に戻す
-                if (Platform.IsMono()) {
-                    ParentControl.Focus();
-                }
-                CandidatesSelectKey();
 
-                var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
-                QueryScreenCursorLocation?.Invoke(this, e);
-                var screenPt = e.Result;
-                if (Platform.IsMono()) {
-                    // monoでは面倒を避けて別ウィンドウにせず相対座標
-                    var clientPt = ParentControl.PointToClient(screenPt);
-                    _candForm.Location = clientPt;
-                } else {
-                    // Windowsでは別ウィンドウにするので絶対座標
-                    _candForm.Location = screenPt;
-                }
-                CandidatesSetKey();
-                IsCandidateShowProcess = false;
-            }
-            else {
-                CandidatesSelectKey();
-                CandidatesSetKey();
-            }
+            IsCandidateShowProcess = true;
+
+            // カーソルの画面座標
+            var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
+            QueryScreenCursorLocation?.Invoke(this, e);
+            var screenPt = e.Result;
+
+            _candForm.Show(
+                _exprBox,
+                CandidateProvider,
+                screenPt);
+
+            CandidatesUpdate();
+
+            IsCandidateShowProcess = false;
         }
 
         public void CandidatesHide() {
             if (Platform.IsMono() && IsCandidateShowProcess) return; // CandidatesShow中の謎の消失現象を抑制
-            if (Platform.IsMono() && (_candForm != null && _candForm.ContainsFocus)) return; // candformクリック時のクラッシュ抑制
+            if (Platform.IsMono() && (_candForm.AreShown() && _candForm.ContainsFocus)) return; // candformクリック時のクラッシュ抑制
             if (CandidatesAreShown()) {
-                _candForm.Dispose();
-                _candForm = null;
+              CandidateFormManager.Inst.Hide();
             }
         }
 
@@ -629,6 +611,10 @@ namespace Shapoco.Calctus.UI.Sheets {
             }
             _candKeyStart = candStart;
             _candKeyEnd = candEnd;
+        }
+
+        public void SetOwner(Control exprBox) {
+          _exprBox = exprBox;
         }
 
     }

@@ -330,6 +330,7 @@
 
   <ItemGroup>
     <Compile Include="Platforms\**\*.cs" />
+    <Compile Include="Calctus\UI\Sheets\CandidateFormManager.cs" />
   </ItemGroup>
 
 </Project>
