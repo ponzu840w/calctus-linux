@@ -55,14 +55,13 @@ namespace Shapoco.Calctus.UI.Sheets {
         }
 
         /// <summary>
-        /// 入力キーに応じて候補を更新する（高速版）
+        /// 入力キーに応じて候補を更新する
         /// </summary>
         public void SetKey(string key) {
           // 前回の選択ラベルを保持（無ければ null）
           var lastLabel = _list.SelectedItem is InputCandidate ic ? ic.Label : null;
 
-          // 空文字対策（string.IndexOf は空文字で常に 0 を返すため）
-          key ??= string.Empty;
+          if (key is null) key = string.Empty;
 
           // 低コスト比較のため前処理
           var keyLower = key.ToLowerInvariant();
@@ -83,7 +82,7 @@ namespace Shapoco.Calctus.UI.Sheets {
             if (score >= 0) scored.Add((c, score));
           }
 
-          // スコア → Id アルファベット順で安定ソート
+          // スコア -> Id アルファベット順で安定ソート
           scored.Sort((a, b) => {
               int cmp = a.score.CompareTo(b.score);
               return cmp != 0 ? cmp
@@ -92,7 +91,7 @@ namespace Shapoco.Calctus.UI.Sheets {
 
           int selIndex = -1;
 
-          // 一括で ListBox へ流し込み（再描画 OFF）
+          // 一括で ListBox へ流し込み
           _list.BeginUpdate();
           try {
             _list.Items.Clear();
@@ -114,7 +113,7 @@ namespace Shapoco.Calctus.UI.Sheets {
           // フォールバック：何も決まっていなければ先頭を選ぶ
           if (selIndex < 0 && _list.Items.Count > 0) selIndex = 0;
 
-          // 選択適用
+          // 選択を適用
           _list.SelectedIndex = selIndex;
           _desc.Text = selIndex >= 0
             ? ((InputCandidate)_list.Items[selIndex]).Description
