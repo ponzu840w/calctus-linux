@@ -54,45 +54,71 @@ namespace Shapoco.Calctus.UI.Sheets {
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 
+        /// <summary>
+        /// 入力キーに応じて候補を更新する（高速版）
+        /// </summary>
         public void SetKey(string key) {
-            string lastLabel = null;
-            if (_list.SelectedIndex >= 0) {
-                lastLabel = _list.Items[_list.SelectedIndex].ToString();
-            }
+          // 前回の選択ラベルを保持（無ければ null）
+          var lastLabel = _list.SelectedItem is InputCandidate ic ? ic.Label : null;
 
+          // 空文字対策（string.IndexOf は空文字で常に 0 を返すため）
+          key ??= string.Empty;
+
+          // 低コスト比較のため前処理
+          var keyLower = key.ToLowerInvariant();
+
+          // 候補抽出 & スコア付け（1 パス）
+          var scored = new List<(InputCandidate cand, int score)>();
+          foreach (var c in _provider.Candidates) {
+            int score = -1;
+
+            // キー長 0 なら全件表示（starts-with と同等の優先順位）
+            if (key.Length == 0) score = 1;
+            else if (c.Id.Equals(key, StringComparison.OrdinalIgnoreCase))           score = 0;
+            else if (c.Id.StartsWith(key, StringComparison.OrdinalIgnoreCase))       score = 1;
+            else if (c.Id.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0)     score = 2;
+            else if (!string.IsNullOrEmpty(c.Description) &&
+                c.Description.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0) score = 3;
+
+            if (score >= 0) scored.Add((c, score));
+          }
+
+          // スコア → Id アルファベット順で安定ソート
+          scored.Sort((a, b) => {
+              int cmp = a.score.CompareTo(b.score);
+              return cmp != 0 ? cmp
+              : string.Compare(a.cand.Id, b.cand.Id, StringComparison.OrdinalIgnoreCase);
+              });
+
+          int selIndex = -1;
+
+          // 一括で ListBox へ流し込み（再描画 OFF）
+          _list.BeginUpdate();
+          try {
             _list.Items.Clear();
-            int selIndex = 0;
 
-            // 先頭一致を探す
-            foreach (var c in _provider.Candidates) {
-                if (c.Id.StartsWith(key, StringComparison.OrdinalIgnoreCase)) {
-                    _list.Items.Add(c);
-                    if (c.Id.Equals(key, StringComparison.OrdinalIgnoreCase) || c.Label == lastLabel) {
-                        selIndex = _list.Items.Count - 1;
-                    }
-                }
-            }
+            for (int i = 0; i < scored.Count; i++) {
+              var cand = scored[i].cand;
+              _list.Items.Add(cand);
 
-            // 先頭以外に一致するものを探す
-            foreach (var c in _provider.Candidates) {
-                if (c.Id.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0 && _list.Items.IndexOf(c) == -1) {
-                    _list.Items.Add(c);
-                }
+              // 選択候補決定
+              if (selIndex < 0) {
+                if (cand.Id.Equals(key, StringComparison.OrdinalIgnoreCase)) selIndex = i;  // 完全一致
+                else if (cand.Label == lastLabel)                                           // 以前の選択が残っている
+                  selIndex = i;
+              }
             }
+          }
+          finally { _list.EndUpdate(); }
 
-            // 説明文に一致するものを探す
-            foreach (var c in _provider.Candidates) {
-                if (c.Description.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= -0 && _list.Items.IndexOf(c) == -1) {
-                    _list.Items.Add(c);
-                }
-            }
+          // フォールバック：何も決まっていなければ先頭を選ぶ
+          if (selIndex < 0 && _list.Items.Count > 0) selIndex = 0;
 
-            if (selIndex < _list.Items.Count) {
-                _list.SelectedIndex = selIndex;
-            }
-            else {
-                _desc.Text = "";
-            }
+          // 選択適用
+          _list.SelectedIndex = selIndex;
+          _desc.Text = selIndex >= 0
+            ? ((InputCandidate)_list.Items[selIndex]).Description
+            : string.Empty;
         }
 
         public InputCandidate SelectedItem {
