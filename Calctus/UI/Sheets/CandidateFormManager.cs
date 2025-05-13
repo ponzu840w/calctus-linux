@@ -69,7 +69,12 @@ namespace Shapoco.Calctus.UI.Sheets {
     }
 
     /// <summary>現在選択中のアイテムを取得</summary>
-    public InputCandidate? SelectedItem => _form?.SelectedItem;
+    public InputCandidate SelectedItem {
+      get {
+        if (_form == null) { return null; }
+        return _form.SelectedItem;
+      }
+    }
 
   }
 }
