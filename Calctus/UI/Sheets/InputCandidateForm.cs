@@ -58,66 +58,66 @@ namespace Shapoco.Calctus.UI.Sheets {
         /// 入力キーに応じて候補を更新する
         /// </summary>
         public void SetKey(string key) {
-          // 前回の選択ラベルを保持（無ければ null）
+          // 前回の選択ラベルを保持
           var lastLabel = _list.SelectedItem is InputCandidate ic ? ic.Label : null;
-
           if (key is null) key = string.Empty;
 
-          // 低コスト比較のため前処理
-          var keyLower = key.ToLowerInvariant();
+          // ３つのバケットに振り分け
+          var bucket1 = new List<InputCandidate>();  // 先頭一致 or key=="" の全件
+          var bucket2 = new List<InputCandidate>();  // 部分一致
+          var bucket3 = new List<InputCandidate>();  // 説明文一致
 
-          // 候補抽出 & スコア付け（1 パス）
-          var scored = new List<(InputCandidate cand, int score)>();
           foreach (var c in _provider.Candidates) {
-            int score = -1;
-
-            // キー長 0 なら全件表示（starts-with と同等の優先順位）
-            if (key.Length == 0) score = 1;
-            else if (c.Id.Equals(key, StringComparison.OrdinalIgnoreCase))           score = 0;
-            else if (c.Id.StartsWith(key, StringComparison.OrdinalIgnoreCase))       score = 1;
-            else if (c.Id.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0)     score = 2;
-            else if (!string.IsNullOrEmpty(c.Description) &&
-                c.Description.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0) score = 3;
-
-            if (score >= 0) scored.Add((c, score));
+            if (key.Length == 0 || c.Id.StartsWith(key, StringComparison.OrdinalIgnoreCase)) {
+              bucket1.Add(c);
+            }
+            else if (c.Id.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0) {
+              bucket2.Add(c);
+            }
+            else if (!string.IsNullOrEmpty(c.Description)
+                     && c.Description.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0) {
+              bucket3.Add(c);
+            }
           }
 
-          // スコア -> Id アルファベット順で安定ソート
-          scored.Sort((a, b) => {
-              int cmp = a.score.CompareTo(b.score);
-              return cmp != 0 ? cmp
-              : string.Compare(a.cand.Id, b.cand.Id, StringComparison.OrdinalIgnoreCase);
-              });
-
-          int selIndex = -1;
-
-          // 一括で ListBox へ流し込み
+          // ListBox に一気に追加しつつ、先頭一致グループだけで selIndex を決定
           _list.BeginUpdate();
           try {
             _list.Items.Clear();
+            int selIndex = 0;
+            int idx = 0;
 
-            for (int i = 0; i < scored.Count; i++) {
-              var cand = scored[i].cand;
-              _list.Items.Add(cand);
-
-              // 選択候補決定
-              if (selIndex < 0) {
-                if (cand.Id.Equals(key, StringComparison.OrdinalIgnoreCase)) selIndex = i;  // 完全一致
-                else if (cand.Label == lastLabel)                                           // 以前の選択が残っている
-                  selIndex = i;
+            // --- グループ1: 先頭一致（or key=="" で全件） ---
+            foreach (var c in bucket1) {
+              _list.Items.Add(c);
+              // 完全一致 or lastLabel があれば常に上書き
+              if (c.Id.Equals(key, StringComparison.OrdinalIgnoreCase)
+                  || c.Label == lastLabel) {
+                selIndex = idx;
               }
+              idx++;
             }
+            // --- グループ2: 部分一致 ---
+            foreach (var c in bucket2) {
+              _list.Items.Add(c);
+              idx++;
+            }
+            // --- グループ3: 説明一致 ---
+            foreach (var c in bucket3) {
+              _list.Items.Add(c);
+              idx++;
+            }
+
+            // 選択項目の表示
+            if (_list.Items.Count > 0) {
+              _list.SelectedIndex = selIndex;
+              _desc.Text = ((InputCandidate)_list.Items[selIndex]).Description;
+            } else {
+              _desc.Text = string.Empty;
+            }
+          } finally {
+            _list.EndUpdate();
           }
-          finally { _list.EndUpdate(); }
-
-          // フォールバック：何も決まっていなければ先頭を選ぶ
-          if (selIndex < 0 && _list.Items.Count > 0) selIndex = 0;
-
-          // 選択を適用
-          _list.SelectedIndex = selIndex;
-          _desc.Text = selIndex >= 0
-            ? ((InputCandidate)_list.Items[selIndex]).Description
-            : string.Empty;
         }
 
         public InputCandidate SelectedItem {
