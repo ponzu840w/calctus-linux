@@ -4,9 +4,9 @@ Calctus（[shapoco/calctus](https://github.com/shapoco/calctus)）のMono/Linux�
 
 ![Screen Shot](img/linux.jpg)
 
-元のCalctusはWindowsを対象にしていますが、.NET Frameworkで開発されているため、.NET FrameworkのOSS実装である[Mono](https://www.mono-project.com/)をランタイムとして用いることでLinuxでの動作の可能性があります。
+元のCalctusはWindowsを対象にしていますが、.NET Frameworkで開発されているため、.NET FrameworkのOSS実装である[Mono](https://www.mono-project.com/)をランタイムとして用いることでLinuxでも動作します。
 
-このフォークではMonoの一部非互換な機能やCalctusのWindows依存の記述に多少の変更を加えることでLinuxでの動作を可能にしていますが、同じバイナリをWindowsで実行すれば従来通りの動作をする（はず）のユニバーサルなバイナリです。
+このフォークではMonoの一部非互換な機能やCalctusのWindows依存の記述に多少の変更を加えることでLinuxでの快適な利用を可能にしていますが、同じバイナリをWindowsで実行すれば従来通りの動作をする（はず）のユニバーサル仕様です。
 
 ## 実行方法
 ### Monoランタイムのビルド＆インストール
@@ -55,7 +55,7 @@ make uninstall
 
 ## 既知のバグ
 - HotKeyを登録するとクラッシュする
-- アルファベットを数文字入力するときに非常に動作が遅くなる
+- アルファベットの入力が非常に重い（候補表示のため）
 - plotウィンドウがメインウインドウの裏に隠れることがある
 - plotウィンドウや設定ウィンドウが不意に消えることがある
 
