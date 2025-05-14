@@ -56,6 +56,7 @@ namespace Shapoco.Calctus.UI {
             ));
 
             InitializeComponent();
+            this.notifyIcon.Icon = this.Icon;
             if (this.DesignMode) return;
 
             sidePaneBodyPanel.Visible = false;
