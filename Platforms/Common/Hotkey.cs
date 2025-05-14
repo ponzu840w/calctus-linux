@@ -5,8 +5,68 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using Shapoco.Calctus;
+using Shapoco.Calctus.UI;
 
-namespace Shapoco.Calctus.UI {
+namespace Shapoco.Platforms.Common {
+    internal partial class HotKeyManager {
+        private HotKey _hotkey = null;
+        private MainForm _mainForm = null;
+        private NotifyIcon _notifyIcon = null;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        public HotKeyManager(MainForm mf, NotifyIcon notifyIcon = null) {
+            _mainForm = mf;
+            _notifyIcon = notifyIcon;
+        }
+
+        public void enableHotkey()
+        {
+            var s = Settings.Instance;
+            if (s.Hotkey_Enabled && s.HotKey_KeyCode != Keys.None)
+            {
+                MOD_KEY mod = MOD_KEY.NONE;
+                if (s.HotKey_Win) mod |= MOD_KEY.WIN;
+                if (s.HotKey_Alt) mod |= MOD_KEY.ALT;
+                if (s.HotKey_Ctrl) mod |= MOD_KEY.CONTROL;
+                if (s.HotKey_Shift) mod |= MOD_KEY.SHIFT;
+                _hotkey = new HotKey(mod, s.HotKey_KeyCode);
+                _hotkey.HotKeyPush += _hotkey_HotKeyPush;
+            }
+        }
+
+        public void disableHotkey()
+        {
+            if (_hotkey != null)
+            {
+                _hotkey.HotKeyPush -= _hotkey_HotKeyPush;
+                _hotkey.Dispose();
+                _hotkey = null;
+            }
+        }
+
+        public void _hotkey_HotKeyPush(object sender, EventArgs e)
+        {
+            if (GetForegroundWindow() == _mainForm.Handle)
+            {
+                if (_notifyIcon.Visible)
+                {
+                    _mainForm.Visible = false;
+                }
+                else
+                {
+                    _mainForm.WindowState = FormWindowState.Minimized;
+                }
+            }
+            else
+            {
+                _mainForm.ShowForeground();
+            }
+        }
+    }
+
     /// <summary>
     /// グローバルホットキーを登録するクラス。
     /// 使用後は必ずDisposeすること。

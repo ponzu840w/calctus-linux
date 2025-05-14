@@ -199,7 +199,6 @@
     <Compile Include="Calctus\UI\Sheets\GdiControl.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Calctus\UI\Hotkey.cs" />
     <Compile Include="Calctus\UI\Sheets\ExprBoxCore.cs" />
     <Compile Include="Calctus\UI\Sheets\InputCandidate.cs" />
     <Compile Include="Calctus\UI\Sheets\InputCandidateForm.cs">
@@ -329,7 +328,8 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
   <ItemGroup>
-    <Compile Include="Platforms\**\*.cs" />
+    <Compile Include="Platforms\*.cs" />
+    <Compile Include="Platforms\Common\*.cs" />
     <Compile Include="Calctus\UI\Sheets\CandidateFormManager.cs" />
   </ItemGroup>
 
