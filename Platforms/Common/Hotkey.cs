@@ -9,20 +9,46 @@ using Shapoco.Calctus;
 using Shapoco.Calctus.UI;
 
 namespace Shapoco.Platforms.Common {
+    public interface IHotKeyService : IDisposable
+    {
+        /// <summary>ホットキー登録</summary>
+        /// <returns>成功したら true</returns>
+        bool Register(ModifierKey modifiers, Keys key);
+
+        /// <summary>ホットキー解除</summary>
+        void Unregister();
+
+        /// <summary>ホットキー押下イベント</summary>
+        event EventHandler HotKeyPressed;
+    }
+
     internal partial class HotKeyManager {
-        private HotKey _hotkey = null;
-        private MainForm _mainForm = null;
-        private NotifyIcon _notifyIcon = null;
+        readonly IHotKeyService _service;
+        readonly MainForm _mainForm;
+        readonly NotifyIcon _notifyIcon;
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
 
         public HotKeyManager(MainForm mf, NotifyIcon notifyIcon = null) {
-            _mainForm = mf;
-            _notifyIcon = notifyIcon;
+            _mainForm = mf; _notifyIcon = notifyIcon;
+            _service = HotKeyServiceFactory.Create();
+            _service.HotKeyPressed += OnHotKey;
         }
 
-        public void enableHotkey()
+        public void Enable() {
+            var s = Settings.Instance;
+            if (!s.Hotkey_Enabled) return;
+            if (!_service.Register(
+                  (ModifierKey)(
+                    (s.HotKey_Ctrl  ? ModifierKey.Ctrl  : 0) |
+                    (s.HotKey_Alt   ? ModifierKey.Alt   : 0) |
+                    (s.HotKey_Shift ? ModifierKey.Shift : 0) |
+                    (s.HotKey_Win   ? ModifierKey.Win   : 0)),
+                  s.HotKey_KeyCode))
+                MessageBox.Show("Hotkey registration failed.");
+        }
+        /*public void enableHotkey()
         {
             var s = Settings.Instance;
             if (s.Hotkey_Enabled && s.HotKey_KeyCode != Keys.None)
@@ -32,12 +58,13 @@ namespace Shapoco.Platforms.Common {
                 if (s.HotKey_Alt) mod |= MOD_KEY.ALT;
                 if (s.HotKey_Ctrl) mod |= MOD_KEY.CONTROL;
                 if (s.HotKey_Shift) mod |= MOD_KEY.SHIFT;
-                _hotkey = new HotKey(mod, s.HotKey_KeyCode);
+                _hotkey = new WindowsHotKeyImpl(mod, s.HotKey_KeyCode);
                 _hotkey.HotKeyPush += _hotkey_HotKeyPush;
             }
-        }
+        }*/
 
-        public void disableHotkey()
+        public void Disable() => _service.Unregister();
+        /*public void disableHotkey()
         {
             if (_hotkey != null)
             {
@@ -45,9 +72,9 @@ namespace Shapoco.Platforms.Common {
                 _hotkey.Dispose();
                 _hotkey = null;
             }
-        }
+        }*/
 
-        public void _hotkey_HotKeyPush(object sender, EventArgs e)
+        private void OnHotKey(object sender, EventArgs e)
         {
             if (GetForegroundWindow() == _mainForm.Handle)
             {
@@ -71,7 +98,7 @@ namespace Shapoco.Platforms.Common {
     /// グローバルホットキーを登録するクラス。
     /// 使用後は必ずDisposeすること。
     /// </summary>
-    public class HotKey : IDisposable {
+    public class WindowsHotKeyImpl : IDisposable {
         HotKeyForm form;
         /// <summary>
         /// ホットキーが押されると発生する。
@@ -84,7 +111,7 @@ namespace Shapoco.Platforms.Common {
         /// </summary>
         /// <param name="modKey">修飾キー</param>
         /// <param name="key">キー</param>
-        public HotKey(MOD_KEY modKey, Keys key) {
+        public WindowsHotKeyImpl(MOD_KEY modKey, Keys key) {
             form = new HotKeyForm(modKey, key, raiseHotKeyPush);
         }
 
@@ -152,4 +179,41 @@ namespace Shapoco.Platforms.Common {
         SHIFT = 0x0004,
         WIN = 0x0008,
     }
+    [Flags]
+    public enum ModifierKey
+    {
+        None = 0, Alt = 1, Ctrl = 2, Shift = 4, Win = 8
+    }
+
+    class WindowsHotKeyService : IHotKeyService
+    {
+        private WindowsHotKeyImpl _impl;  // 既存の HotKey クラスをラップ
+        public event EventHandler HotKeyPressed;
+
+        public bool Register(ModifierKey m, Keys k)
+        {
+            _impl = new WindowsHotKeyImpl((MOD_KEY)m, k);
+            _impl.HotKeyPush += (s, e) => HotKeyPressed?.Invoke(this, EventArgs.Empty);
+            return true; // 必要なら失敗検出も
+        }
+        public void Unregister()
+        {
+            _impl?.Dispose();
+            _impl = null;
+        }
+        public void Dispose() => Unregister();
+    }
+    // HotKeyServiceFactory.cs
+    public static class HotKeyServiceFactory
+    {
+        public static IHotKeyService Create()
+        {
+            if (Platform.IsWindows())
+                return new WindowsHotKeyService();
+            //if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            //    return new LinuxHotKeyService();
+            throw new PlatformNotSupportedException();
+        }
+    }
+
 }

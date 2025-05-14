@@ -197,7 +197,7 @@ namespace Shapoco.Calctus.UI {
                 }
             }
             notifyIcon.Visible = false;
-            _hotkeyman.disableHotkey();
+            _hotkeyman.Disable();
             deleteOldHistories();
         }
 
@@ -234,8 +234,8 @@ namespace Shapoco.Calctus.UI {
 
                 notifyIcon.Visible = s.Startup_TrayIcon;
 
-                _hotkeyman.disableHotkey();
-                _hotkeyman.enableHotkey();
+                _hotkeyman.Disable();
+                _hotkeyman.Enable();
 
                 var font_large_coeff = 1.25f;
                 var font_style = s.Appearance_Font_Bold ? FontStyle.Bold : FontStyle.Regular;
