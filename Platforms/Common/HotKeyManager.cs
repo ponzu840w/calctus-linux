@@ -17,8 +17,8 @@ namespace Shapoco.Platforms.Common {
             _mainForm = mf; _notifyIcon = notifyIcon;
             if (Platform.IsWindows()) {
                 _service = new Windows.WindowsHotKeyService();
-                //if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                //    return new LinuxHotKeyService();
+            } else if (Platform.IsLinux()) {
+                _service = new Linux.LinuxHotKeyService();
             } else {
                 throw new PlatformNotSupportedException();
             }
