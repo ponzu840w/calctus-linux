@@ -15,7 +15,7 @@ MonoはWineHQに移管（[https://gitlab.winehq.org/mono/mono](https://gitlab.wi
 （実行には必ずしも最新版のMonoが必要というわけではありませんが、わざわざLinuxでCalctusを動かしたいと思っている人はビルドした方が幸せになれると思います）
 ```
 # ビルドツール
-sudo apt-get install git autoconf libtool automake build-essential gettext cmake python3 curl
+sudo apt-get install git autoconf libtool automake build-essential gettext cmake python3 curl pkg-config
 
 # mono
 wget https://dl.winehq.org/mono/sources/mono/mono-6.14.0.tar.xz
