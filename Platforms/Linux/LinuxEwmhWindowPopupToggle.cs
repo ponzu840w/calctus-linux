@@ -20,6 +20,9 @@ namespace Shapoco.Platforms.Linux {
     const long SubstructureNotifyMask   = 1L << 19;
 
     [DllImport("libX11")]
+    static extern int XFetchName(IntPtr display, IntPtr w, out IntPtr name);
+
+    [DllImport("libX11")]
     static extern IntPtr XOpenDisplay(string display_name);
 
     [DllImport("libX11")]
@@ -66,6 +69,16 @@ namespace Shapoco.Platforms.Linux {
     [DllImport("libX11")]
     static extern int DefaultScreen(IntPtr display);
 
+    [DllImport("libX11")]
+    static extern int XQueryTree(
+      IntPtr display,
+      IntPtr w,
+      out IntPtr root_return,
+      out IntPtr parent_return,
+      out IntPtr children_return,
+      out IntPtr nchildren_return
+      );
+
     [StructLayout(LayoutKind.Sequential)]
     struct XClientMessageEvent {
       public int type;
@@ -80,17 +93,39 @@ namespace Shapoco.Platforms.Linux {
     }
 
     public LinuxEwmhWindowPopupToggle(MainForm mainForm, NotifyIcon notifyIcon) {
-      _mainForm       = mainForm;
-      _notifyIcon     = notifyIcon;
-      _display        = XOpenDisplay(null);
-      _root           = XDefaultRootWindow(_display);
+      _mainForm         = mainForm;
+      _notifyIcon       = notifyIcon;
+      _display          = XOpenDisplay(null);
+      _root             = XDefaultRootWindow(_display);
       _atomActiveWindow = XInternAtom(_display, "_NET_ACTIVE_WINDOW", false);
+    }
+
+    // アプリのトップのウィンドウを得る
+    // ツリーを遡って初めて名前付きのウィンドウがあればそれがアプリのトップ
+    IntPtr GetAppWindow(IntPtr win) {
+      const int MaxDepth = 50;
+      for (int depth = 0; depth < MaxDepth && win != IntPtr.Zero; depth++) {
+        IntPtr root, parent, children;
+        IntPtr nchildren;
+        var ok = XQueryTree(_display, win, out root, out parent, out children, out nchildren);
+        if (ok == 0) break;             // 親取得失敗
+        if (parent == root) return win; // ルート到達
+        if (XFetchName(_display, win, out var namePtr) > 0 && namePtr != IntPtr.Zero) {
+          XFree(namePtr);
+          return win;
+        }                               // 名前付き=アプリのトップ
+        win = parent;
+      }
+      return win;
     }
 
     public void Toggle(object sender, EventArgs e) {
       Console.WriteLine("Toggle called");
       var activeWin = GetActiveWindow();
-      if (activeWin == _mainForm.Handle) {
+      var appWin    = GetAppWindow(_mainForm.Handle);
+      Console.WriteLine($"[DBG] appWin = 0x{appWin.ToInt64():X}");
+      Console.WriteLine($"[DBG] _NET_ACTIVE_WINDOW = 0x{activeWin.ToInt64():X}");
+      if (activeWin == appWin) {
         Console.WriteLine("Active window is main form");
         // 自分がアクティブなら隠す／最小化
         if (_notifyIcon.Visible) {
