@@ -67,7 +67,7 @@ namespace Shapoco.Platforms.Linux {
         );
 
     [DllImport("libX11")]
-    static extern int DefaultScreen(IntPtr display);
+    static extern int XDefaultScreen(IntPtr display);
 
     [DllImport("libX11")]
     static extern int XQueryTree(
@@ -133,7 +133,7 @@ namespace Shapoco.Platforms.Linux {
           _mainForm.Visible = false;
         } else {
           Console.WriteLine("Showing main form");
-          XIconifyWindow(_display, _mainForm.Handle, DefaultScreen(_display));
+          XIconifyWindow(_display, _mainForm.Handle, XDefaultScreen(_display));
         }
       }
       else {
