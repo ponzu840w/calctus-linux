@@ -3,7 +3,6 @@ using Shapoco.Calctus.UI;
 using System.Windows.Forms;
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Shapoco.Platforms.Windows {
   class WindowsWindowPopupToggle : IWindowPopupToggle {

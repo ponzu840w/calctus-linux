@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Shapoco.Calctus;
 using Shapoco.Calctus.UI;

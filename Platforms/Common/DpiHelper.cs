@@ -1,8 +1,6 @@
 using System;
-using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
-using Shapoco.Platforms;
 
 namespace Shapoco.Platforms.Common {
   /// <summary>
