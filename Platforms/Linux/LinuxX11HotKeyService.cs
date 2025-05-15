@@ -9,7 +9,7 @@ namespace Shapoco.Platforms.Linux
 {
 
   // https://github.com/culajunge/LinuxGlobalHotkeys
-  public class LinuxHotKeyService : Common.IHotKeyService
+  public class LinuxX11HotKeyService : Common.IHotKeyService
   {
     // --- X11 P/Invoke
     [DllImport("libX11.so.6")]
@@ -57,7 +57,7 @@ namespace Shapoco.Platforms.Linux
 
     public event EventHandler HotKeyPressed;
 
-    public LinuxHotKeyService()
+    public LinuxX11HotKeyService()
     {
       _display = XOpenDisplay(null);
       if (_display == IntPtr.Zero)

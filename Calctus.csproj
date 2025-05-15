@@ -332,7 +332,6 @@
     <Compile Include="Platforms\Common\*.cs" />
     <Compile Include="Platforms\Windows\*.cs" />
     <Compile Include="Platforms\Linux\*.cs" />
-    <Compile Include="Platforms\Linux\X11\*.cs" />
     <Compile Include="Calctus\UI\Sheets\CandidateFormManager.cs" />
   </ItemGroup>
 
