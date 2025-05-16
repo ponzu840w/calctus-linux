@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Shapoco.Platforms.Common;
-using Shapoco.Calctus.UI;
 
 namespace Shapoco.Platforms.Linux
 {
     /// <summary>
     /// メインウィンドウの出没をトグルする実装
-    /// Toggle() が呼ばれるたびに最小化／復帰を切り替えます。
+    /// Toggle() が呼ばれるたびにアクティブ状態なら最小化、そうでなければ復帰・アクティブ化
     /// </summary>
     public class LinuxWindowPopupToggle : IWindowPopupToggle
     {
@@ -27,15 +25,12 @@ namespace Shapoco.Platforms.Linux
         }
 
         /// <summary>
-        /// メインフォームを最小化／復帰させる
-        /// ・Visible かつ Minimized でなければ、トレイアイコンが表示中なら隠す（トレイ格納）、
-        ///   そうでなければタスクバーへ最小化。
-        /// ・それ以外は復帰：タスクバー表示／通常サイズ／アクティブ化。
+        /// メインフォームをアクティブ状態なら最小化、そうでなければ復帰・アクティブ化
         /// </summary>
         public void Toggle(object sender, EventArgs e)
         {
-            // 現在フォームが表示中かつ最小化状態でない場合 -> 隠す or 最小化
-            if (mainForm.Visible && mainForm.WindowState != FormWindowState.Minimized)
+            // アプリがアクティブなら最小化／非表示
+            if (Form.ActiveForm == mainForm)
             {
                 if (trayIcon.Visible)
                 {
@@ -52,7 +47,7 @@ namespace Shapoco.Platforms.Linux
             }
             else
             {
-                // 復帰処理
+                // アクティブでなければ復帰／最前面
                 mainForm.ShowInTaskbar = true;
                 mainForm.Show();
                 mainForm.WindowState = FormWindowState.Normal;
