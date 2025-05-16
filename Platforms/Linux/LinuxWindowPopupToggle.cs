@@ -29,6 +29,12 @@ namespace Shapoco.Platforms.Linux
         /// </summary>
         public void Toggle(object sender, EventArgs e)
         {
+            // UIスレッド強制
+            if (mainForm.InvokeRequired)
+            {
+              mainForm.BeginInvoke((Action)(() => Toggle(sender, e)));
+              return;
+            }
             // アプリがアクティブなら最小化／非表示
             if (Form.ActiveForm == mainForm)
             {
