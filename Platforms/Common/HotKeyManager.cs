@@ -16,7 +16,7 @@ namespace Shapoco.Platforms.Common {
         _service.HotKeyPressed += _winpop.Toggle;
       } else if (Platform.IsLinuxMono()) {
         _service = new Linux.LinuxX11HotKeyService();
-        _winpop = new Linux.LinuxEwmhWindowPopupToggle(mf, notifyIcon);
+        _winpop = new Linux.LinuxWindowPopupToggle(mf, notifyIcon);
         _service.HotKeyPressed += _winpop.Toggle;
       } else {
         throw new PlatformNotSupportedException();
