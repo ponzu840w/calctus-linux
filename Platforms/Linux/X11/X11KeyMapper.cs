@@ -2,18 +2,25 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace Shapoco.Platforms.Linux
+namespace Shapoco.Platforms.Linux.X11
 {
-  public static class LinuxX11KeyMapper
+  public static class X11KeyMapper
   {
     // --- X11 P/Invoke (同じ DLL は  hotkey service と共有) ---
     [DllImport("libX11.so.6")] static extern IntPtr XStringToKeysym(string s);
     [DllImport("libX11.so.6")] static extern byte XKeysymToKeycode(IntPtr d, IntPtr ks);
-    [DllImport("libX11.so.6")] static extern IntPtr XOpenDisplay(string dpy);
-    [DllImport("libX11.so.6")] static extern int XCloseDisplay(IntPtr d);
 
-    /// <summary>Keys → KeySym 文字列</summary>
-    public static string ConvertKeysToKeySymString(Keys key)
+    /// <summary>X11 KeySym 文字列 -> X11 keycode</summary>
+    public static byte GetKeycodeForKeysym(IntPtr display, string keysymName)
+    {
+      if (display == IntPtr.Zero) return 0;
+      IntPtr keysym = XStringToKeysym(keysymName);
+      if (keysym == IntPtr.Zero) return 0;
+      return XKeysymToKeycode(display, keysym);
+    }
+
+    /// <summary>.NET Keys → X11 KeySym 文字列</summary>
+    public static string ConvertKeysToX11KeySymString(Keys key)
     {
       if (key >= Keys.A && key <= Keys.Z) return key.ToString();
       if (key >= Keys.F1 && key <= Keys.F12) return key.ToString();
@@ -58,32 +65,23 @@ namespace Shapoco.Platforms.Linux
       }
     }
 
-    /// <summary>
-    /// X11 hardware keycode → System.Windows.Forms.Keys へ逆引き
-    /// </summary>
-    public static bool TryX11KeycodeToKeys(byte keycode, out Keys keys)
+    /// <summary>X11 keycode -> .NET Keys</summary>
+    public static bool TryX11KeycodeToKeys(IntPtr display, byte keycode, out Keys keys)
     {
       keys = Keys.None;
-      IntPtr dpy = XOpenDisplay(null);
-      if (dpy == IntPtr.Zero) return false;
-
-      try
+      foreach (Keys k in Enum.GetValues(typeof(Keys)))
       {
-        foreach (Keys k in Enum.GetValues(typeof(Keys)))
+        var sym = ConvertKeysToX11KeySymString(k);
+        if (sym == null) continue;
+        IntPtr ks = XStringToKeysym(sym);
+        if (ks == IntPtr.Zero) continue;
+        if (XKeysymToKeycode(display, ks) == keycode)
         {
-          var sym = ConvertKeysToKeySymString(k);
-          if (sym == null) continue;
-          IntPtr ks = XStringToKeysym(sym);
-          if (ks == IntPtr.Zero) continue;
-          if (XKeysymToKeycode(dpy, ks) == keycode)
-          {
-            keys = k;
-            return true;
-          }
+          keys = k;
+          return true;
         }
-        return false;
       }
-      finally { XCloseDisplay(dpy); }
+      return false;
     }
   }
 }

@@ -5,39 +5,19 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Shapoco.Platforms.Linux.X11;
 
 namespace Shapoco.Platforms.Linux
 {
-
   // https://github.com/culajunge/LinuxGlobalHotkeys
-  public class LinuxX11HotKeyService : Common.IHotKeyService
+  public class LinuxX11HotKeyService : Common.IHotKeyService, IDisposable
   {
     private const int POLLING_T = 50; // ポーリング間隔 ms
 
     // --- X11 P/Invoke
     [DllImport("libX11.so.6")]
-    private static extern IntPtr XOpenDisplay(string display);
-
-    [DllImport("libX11.so.6")]
-    private static extern int XCloseDisplay(IntPtr display);
-
-    [DllImport("libX11.so.6")]
-    private static extern IntPtr XStringToKeysym(string keysym);
-
-    [DllImport("libX11.so.6")]
-    private static extern byte XKeysymToKeycode(IntPtr display, IntPtr keysym);
-
-    [DllImport("libX11.so.6")]
     private static extern int XQueryKeymap(IntPtr display, [Out] byte[] keys);
 
-    [DllImport("libX11.so.6")]
-    private static extern IntPtr XDisplayKeycodes(IntPtr display, out int min_keycode_return, out int max_keycode_return);
-
-    [DllImport("libX11.so.6")]
-    private static extern IntPtr XGetKeyboardMapping(IntPtr display, byte first_keycode, int keycode_count, out int keysyms_per_keycode_return);
-
-    [DllImport("libX11.so.6")]
-    private static extern void XFree(IntPtr data);
     // --- X11 定数 ---
     // X11 Modifier masks
     // private const uint ShiftMask = (1 << 0);
@@ -49,7 +29,6 @@ namespace Shapoco.Platforms.Linux
     // private const uint Mod4Mask = (1 << 6);    // Super/Win
     // private const uint Mod5Mask = (1 << 7);
 
-    private IntPtr _display;
     private CancellationTokenSource _cts;
     private Task _listenerTask;
 
@@ -59,23 +38,18 @@ namespace Shapoco.Platforms.Linux
 
     public event EventHandler HotKeyPressed;
 
+    private readonly X11DisplayManager _dmgr;
+
     public LinuxX11HotKeyService()
     {
-      _display = XOpenDisplay(null);
-      if (_display == IntPtr.Zero)
-      {
-#if Debug
-        Console.WriteLine("[DBG X11HotKey] Failed to open X11 display. Make sure X11/XWayland is running.");
-#endif
-      }
-
+      _dmgr = X11DisplayManager.Instance;
       _modifierKeycodes = InitializeModifierKeycodes();
     }
 
     // 装飾キーの->X11キーコードマッピングを初期化
     private Dictionary<Common.ModifierKey, List<byte>> InitializeModifierKeycodes()
     {
-      if (_display == IntPtr.Zero) return null;
+      if (_dmgr.Display == IntPtr.Zero) return null;
       var symNames = new Dictionary<Common.ModifierKey, string[]>
       {
         [Common.ModifierKey.Shift] = new[] { "Shift_L",   "Shift_R"   },
@@ -91,23 +65,13 @@ namespace Shapoco.Platforms.Linux
 
     // 文字列 KeySym の配列を受け取り、有効な KeyCode のリストを返す
     private List<byte> GetModifierKeyCodes(params string[] keySyms) =>
-      keySyms.Select(GetKeycodeForKeysym)
+      keySyms.Select(item => X11KeyMapper.GetKeycodeForKeysym(_dmgr.Display, item))
       .Where(code => code != 0)
       .ToList();
 
-    // キー名文字列からX11キーコードを取得
-    private byte GetKeycodeForKeysym(string keysymName)
-    {
-      if (_display == IntPtr.Zero) return 0;
-      IntPtr keysym = XStringToKeysym(keysymName);
-      if (keysym == IntPtr.Zero) return 0;
-      return XKeysymToKeycode(_display, keysym);
-    }
-
-
     public bool Register(Common.ModifierKey modifiers, Keys key)
     {
-      if (_display == IntPtr.Zero) return false;
+      if (_dmgr.Display == IntPtr.Zero) return false;
       if (_listenerTask != null && !_listenerTask.IsCompleted)
       {
         // 既にリスナーが動作中 = 何か登録済み
@@ -187,7 +151,7 @@ namespace Shapoco.Platforms.Linux
               continue;
             }
 
-            XQueryKeymap(_display, keymap);
+            XQueryKeymap(_dmgr.Display, keymap);
 
             bool allModifiersPressed = true;
             if (_registeredModifiers != Common.ModifierKey.None)
@@ -274,64 +238,16 @@ namespace Shapoco.Platforms.Linux
     private byte ConvertKeysToX11Keycode(Keys key)
     {
       // System.Windows.Forms.Keys から X11 Keycode へのマッピング
-      string keysymName = ConvertKeysToKeySymStringInternal(key);
+      string keysymName = X11KeyMapper.ConvertKeysToX11KeySymString(key);
       if (string.IsNullOrEmpty(keysymName)) return 0;
 
-      return GetKeycodeForKeysym(keysymName);
-    }
-
-    private string ConvertKeysToKeySymStringInternal(Keys key)
-    {
-      if (key >= Keys.A && key <= Keys.Z)    return key.ToString();
-      if (key >= Keys.F1 && key <= Keys.F12) return key.ToString();
-      if (key >= Keys.D0 && key <= Keys.D9)  return (key - Keys.D0).ToString();
-      if (key >= Keys.NumPad0 && key <= Keys.NumPad9) return "KP_" + (key - Keys.NumPad0).ToString();
-
-      switch (key)
-      {
-      case Keys.Space: return "space";
-      case Keys.Enter: return "Return";
-      case Keys.Escape: return "Escape";
-      case Keys.Tab: return "Tab";
-      case Keys.Back: return "BackSpace";
-      case Keys.Delete: return "Delete";
-      case Keys.Up: return "Up";
-      case Keys.Down: return "Down";
-      case Keys.Left: return "Left";
-      case Keys.Right: return "Right";
-      case Keys.Home: return "Home";
-      case Keys.End: return "End";
-      case Keys.PageUp: return "Page_Up";
-      case Keys.PageDown: return "Page_Down";
-      case Keys.Insert: return "Insert";
-      case Keys.Oemcomma: return "comma";
-      case Keys.OemPeriod: return "period";
-      case Keys.OemQuestion: return "slash";
-      case Keys.OemSemicolon: return "semicolon";
-      case Keys.OemQuotes: return "apostrophe";
-      case Keys.OemOpenBrackets: return "bracketleft";
-      case Keys.OemCloseBrackets: return "bracketright";
-      case Keys.OemPipe: return "backslash";
-      case Keys.Oemtilde: return "grave";
-      case Keys.Oemplus: return "equal";
-      case Keys.OemMinus: return "minus";
-      case Keys.Multiply: return "KP_Multiply";
-      case Keys.Add: return "KP_Add";
-      case Keys.Subtract: return "KP_Subtract";
-      case Keys.Decimal: return "KP_Decimal";
-      case Keys.Divide: return "KP_Divide";
-      default: return null;
-      }
+      return X11KeyMapper.GetKeycodeForKeysym(_dmgr.Display, keysymName);
     }
 
     public void Dispose()
     {
       Unregister();
-      if (_display != IntPtr.Zero)
-      {
-        XCloseDisplay(_display);
-        _display = IntPtr.Zero;
-      }
+      _dmgr.Release();
 #if Debug
       Console.WriteLine("[DBG X11 HotKey] LinuxHotKeyService disposed.");
 #endif

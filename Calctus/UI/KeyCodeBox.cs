@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using Shapoco.Platforms;
-using Shapoco.Platforms.Linux;
+using Shapoco.Platforms.Linux.X11;
 using System.Threading;
 
 namespace Shapoco.Calctus.UI {
@@ -157,23 +157,21 @@ namespace Shapoco.Calctus.UI {
     private const int POLLING_T = 50; // ポーリング間隔 ms
 
     // --- X11 P/Invoke ---
-    [DllImport("libX11.so.6")] static extern IntPtr XOpenDisplay(string dpy);
-    [DllImport("libX11.so.6")] static extern int    XCloseDisplay(IntPtr d);
     [DllImport("libX11.so.6")] static extern int    XQueryKeymap(IntPtr d, byte[] keys);
 
     readonly KeyCodeBox _owner;
     readonly CancellationTokenSource _cts = new CancellationTokenSource();
-    readonly IntPtr _display;
     readonly Task _task;
 
     byte[] _prev = new byte[32];
 
     volatile bool _active;
 
+    private readonly X11DisplayManager _dmgr;
+
     public X11KeyListener(KeyCodeBox owner) {
       _owner = owner;
-      _display = XOpenDisplay(null);
-      if (_display == IntPtr.Zero) return; // X11 なし
+      _dmgr = X11DisplayManager.Instance;
       _active = false;
 
       _task = Task.Run(Loop, _cts.Token);
@@ -189,7 +187,7 @@ namespace Shapoco.Calctus.UI {
           await Task.Delay(POLLING_T, _cts.Token).ConfigureAwait(false);
           continue;
         }
-        XQueryKeymap(_display, map);
+        XQueryKeymap(_dmgr.Display, map);
 
         // どの keycode が新たに押されたか調べる
         for (byte code = 8; code < 255; code++) { // X11 keycode 8-255
@@ -206,13 +204,13 @@ namespace Shapoco.Calctus.UI {
       }
     }
 
-    static bool TryTranslate(byte code, out Keys k) =>
-      LinuxX11KeyMapper.TryX11KeycodeToKeys(code, out k);
+    public bool TryTranslate(byte code, out Keys k) =>
+      X11KeyMapper.TryX11KeycodeToKeys(_dmgr.Display , code, out k);
 
     public void Dispose() {
       _cts.Cancel();
+      _dmgr.Release();
       try { _task?.Wait(200); } catch { /* ignore */ }
-      if (_display != IntPtr.Zero) XCloseDisplay(_display);
     }
   }
 }
