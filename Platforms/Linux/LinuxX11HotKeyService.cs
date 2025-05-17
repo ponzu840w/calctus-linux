@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -11,7 +12,7 @@ namespace Shapoco.Platforms.Linux
   // https://github.com/culajunge/LinuxGlobalHotkeys
   public class LinuxX11HotKeyService : Common.IHotKeyService
   {
-    private const int POLLING_T = 50;
+    private const int POLLING_T = 50; // ポーリング間隔 ms
 
     // --- X11 P/Invoke
     [DllImport("libX11.so.6")]
@@ -54,7 +55,7 @@ namespace Shapoco.Platforms.Linux
 
     private Common.ModifierKey _registeredModifiers = Common.ModifierKey.None;
     private byte _registeredKeycode = 0; // X11 keycode
-    private Dictionary<Common.ModifierKey, byte> _modifierKeycodes; // 修飾キーEnumとX11キーコードのマッピング
+    private Dictionary<Common.ModifierKey, List<byte>> _modifierKeycodes; // 修飾キーEnum->X11キーのマップ
 
     public event EventHandler HotKeyPressed;
 
@@ -71,31 +72,28 @@ namespace Shapoco.Platforms.Linux
       _modifierKeycodes = InitializeModifierKeycodes();
     }
 
-    // 装飾キーのX11キーコード->.NETキーコードのマッピングを初期化
-    private Dictionary<Common.ModifierKey, byte> InitializeModifierKeycodes()
+    // 装飾キーの->X11キーコードマッピングを初期化
+    private Dictionary<Common.ModifierKey, List<byte>> InitializeModifierKeycodes()
     {
       if (_display == IntPtr.Zero) return null;
-      var mapping = new Dictionary<Common.ModifierKey, byte>();
-      mapping[Common.ModifierKey.Shift] = GetKeycodeForKeysym("Shift_L");
-      mapping[Common.ModifierKey.Ctrl] = GetKeycodeForKeysym("Control_L");
-      mapping[Common.ModifierKey.Alt] = GetKeycodeForKeysym("Alt_L");
-      mapping[Common.ModifierKey.Win] = GetKeycodeForKeysym("Super_L");
-
-      // 存在しないキーコード（0）が返ってきた場合のフィルタリング
-      var validMapping = new Dictionary<Common.ModifierKey, byte>();
-      foreach (var kvp in mapping)
+      var symNames = new Dictionary<Common.ModifierKey, string[]>
       {
-        if (kvp.Value != 0)
-        {
-          validMapping.Add(kvp.Key, kvp.Value);
-        }
-        else
-        {
-          Console.WriteLine($"Warning: Could not find keycode for modifier keysym for {kvp.Key}. This modifier might not work.");
-        }
-      }
-      return validMapping;
+        [Common.ModifierKey.Shift] = new[] { "Shift_L",   "Shift_R"   },
+        [Common.ModifierKey.Ctrl]  = new[] { "Control_L", "Control_R" },
+        [Common.ModifierKey.Alt]   = new[] { "Alt_L",     "Alt_R"     },
+        [Common.ModifierKey.Win]   = new[] { "Super_L",   "Super_R"   }
+      };
+      return symNames.ToDictionary(
+          kvp => kvp.Key,
+          kvp => GetModifierKeyCodes(kvp.Value)
+          );
     }
+
+    // 文字列 KeySym の配列を受け取り、有効な KeyCode のリストを返す
+    private List<byte> GetModifierKeyCodes(params string[] keySyms) =>
+      keySyms.Select(GetKeycodeForKeysym)
+      .Where(code => code != 0)
+      .ToList();
 
     // キー名文字列からX11キーコードを取得
     private byte GetKeycodeForKeysym(string keysymName)
@@ -171,6 +169,7 @@ namespace Shapoco.Platforms.Linux
 #endif
     }
 
+    // キー状態リスナー
     private Task StartKeyStateListener(CancellationToken cancellationToken)
     {
       return Task.Run(() => {
@@ -182,81 +181,82 @@ namespace Shapoco.Platforms.Linux
 
           while (!cancellationToken.IsCancellationRequested)
           {
-          if (_registeredKeycode == 0)
-          { // 何も登録されていなければ何もしない
-          Thread.Sleep(100);
-          continue;
-          }
+            if (_registeredKeycode == 0)
+            { // 何も登録されていなければ何もしない
+              Thread.Sleep(100);
+              continue;
+            }
 
-          XQueryKeymap(_display, keymap);
+            XQueryKeymap(_display, keymap);
 
-          bool allModifiersPressed = true;
-          if (_registeredModifiers != Common.ModifierKey.None)
-          {
-          foreach (Common.ModifierKey modFlag in Enum.GetValues(typeof(Common.ModifierKey)))
-          {
-            if (modFlag == Common.ModifierKey.None) continue;
-
-            if ((_registeredModifiers & modFlag) == modFlag)
-            { // この修飾キーが必要
-              if (_modifierKeycodes.TryGetValue(modFlag, out byte modKeycode))
+            bool allModifiersPressed = true;
+            if (_registeredModifiers != Common.ModifierKey.None)
+            {
+              foreach (Common.ModifierKey modFlag in Enum.GetValues(typeof(Common.ModifierKey)))
               {
-                if (!IsX11KeyPressed(keymap, modKeycode))
-                {
-                  allModifiersPressed = false;
-                  break;
+                if (modFlag == Common.ModifierKey.None) continue;
+
+                if ((_registeredModifiers & modFlag) == modFlag)
+                { // この修飾キーが必要
+                  if (_modifierKeycodes.TryGetValue(modFlag, out var keycodes))
+                  {
+                    bool pressed = keycodes.Any(code => IsX11KeyPressed(keymap, code));
+                    if (!pressed)
+                    {
+                      allModifiersPressed = false;
+                      break;
+                    }
+                  }
+                  else
+                  {
+                    // マッピングにない修飾キーが指定された場合（警告済み）
+                    allModifiersPressed = false; // 安全のため、押されていないとみなす
+                    break;
+                  }
                 }
               }
-              else
+            }
+            else
+            {
+              // 修飾キーなしの場合、他の修飾キーが押されていないことを確認するかどうか？
+              // (例: Alt+A を登録していて、Ctrl+Alt+A が押された場合も発火させるか)
+              // ここでは、指定された修飾キーのみをチェックする。
+              // もし「指定外の修飾キーが押されていたら発火しない」という仕様なら、
+              // _modifierKeycodes に含まれるキーのうち、_registeredModifiers にないものが
+              // 押されていないことを確認するロジックを追加する。
+            }
+
+            bool mainKeyPressed = IsX11KeyPressed(keymap, _registeredKeycode);
+
+            if (allModifiersPressed && mainKeyPressed)
+            {
+              if (!hotkeyCurrentlyPressed)
               {
-                // マッピングにない修飾キーが指定された場合（警告済み）
-                allModifiersPressed = false; // 安全のため、押されていないとみなす
-                break;
-              }
-            }
-          }
-          }
-          else
-          {
-            // 修飾キーなしの場合、他の修飾キーが押されていないことを確認するかどうか？
-            // (例: Alt+A を登録していて、Ctrl+Alt+A が押された場合も発火させるか)
-            // ここでは、指定された修飾キーのみをチェックする。
-            // もし「指定外の修飾キーが押されていたら発火しない」という仕様なら、
-            // _modifierKeycodes に含まれるキーのうち、_registeredModifiers にないものが
-            // 押されていないことを確認するロジックを追加する。
-          }
-
-          bool mainKeyPressed = IsX11KeyPressed(keymap, _registeredKeycode);
-
-          if (allModifiersPressed && mainKeyPressed)
-          {
-            if (!hotkeyCurrentlyPressed)
-            {
-              hotkeyCurrentlyPressed = true;
+                hotkeyCurrentlyPressed = true;
 #if Debug
-              Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
+                Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
 #endif
-              try {
-                HotKeyPressed?.Invoke(this, EventArgs.Empty);
-              }
-              catch (Exception ex) {
-                Console.WriteLine($"HotKeyPressed handler error: {ex}");
-                // ループは継続
+                try {
+                  HotKeyPressed?.Invoke(this, EventArgs.Empty);
+                }
+                catch (Exception ex) {
+                  Console.WriteLine($"HotKeyPressed handler error: {ex}");
+                  // ループは継続
+                }
               }
             }
-          }
-          else
-          {
-            if (hotkeyCurrentlyPressed)
+            else
             {
-              hotkeyCurrentlyPressed = false;
+              if (hotkeyCurrentlyPressed)
+              {
+                hotkeyCurrentlyPressed = false;
 #if Debug
-              Console.WriteLine("[DBG X11 HotKey] Linux hotkey released.");
+                Console.WriteLine("[DBG X11 HotKey] Linux hotkey released.");
 #endif
+              }
             }
-          }
-          Thread.Sleep(POLLING_T); // ポーリング間隔
-          }
+            Thread.Sleep(POLLING_T);
+            }
 #if Debug
           Console.WriteLine("[DBG X11 HotKey] Linux global hotkey listener stopped.");
 #endif
