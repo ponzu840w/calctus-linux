@@ -362,7 +362,7 @@ namespace Shapoco.Calctus.UI {
 
             this.Text =
                 Application.ProductName +
-                " (v" + version_str + ") - " +
+                " (v" + version_str + ") - " + Platform.GetPlatformDescription() + " - " +
                 (_activeBookItem != null ? _activeBookItem.Name : "(null)");
 
             if (requestCheckFileChange) {
