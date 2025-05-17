@@ -83,5 +83,19 @@ namespace Shapoco.Platforms.Linux.X11
       }
       return false;
     }
+
+    public static byte ConvertKeysToX11Keycode(IntPtr display, Keys key)
+    {
+      string keysymName = ConvertKeysToX11KeySymString(key);
+      if (string.IsNullOrEmpty(keysymName)) return 0;
+
+      return X11KeyMapper.GetKeycodeForKeysym(display, keysymName);
+    }
+
+    /// <summary>.NET Keys → X11 keycode</summary>
+    public static byte ConvertKeysToKeycode(IntPtr display, Keys key) {
+      string sym = ConvertKeysToX11KeySymString(key);
+      return GetKeycodeForKeysym(display, sym);
+    }
   }
 }

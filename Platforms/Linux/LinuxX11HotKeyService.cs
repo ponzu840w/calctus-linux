@@ -29,9 +29,6 @@ namespace Shapoco.Platforms.Linux
     // private const uint Mod4Mask = (1 << 6);    // Super/Win
     // private const uint Mod5Mask = (1 << 7);
 
-    private CancellationTokenSource _cts;
-    private Task _listenerTask;
-
     private Common.ModifierKey _registeredModifiers = Common.ModifierKey.None;
     private byte _registeredKeycode = 0; // X11 keycode
     private Dictionary<Common.ModifierKey, List<byte>> _modifierKeycodes; // 修飾キーEnum->X11キーのマップ
@@ -39,6 +36,7 @@ namespace Shapoco.Platforms.Linux
     public event EventHandler HotKeyPressed;
 
     private readonly X11DisplayManager _dmgr;
+    private bool _hotkeyCurrentlyPressed = false;
 
     public LinuxX11HotKeyService()
     {
@@ -71,15 +69,17 @@ namespace Shapoco.Platforms.Linux
 
     public bool Register(Common.ModifierKey modifiers, Keys key)
     {
+      /*
       if (_dmgr.Display == IntPtr.Zero) return false;
       if (_listenerTask != null && !_listenerTask.IsCompleted)
       {
         // 既にリスナーが動作中 = 何か登録済み
         Unregister(); // 一旦解除
       }
+      */
 
       _registeredModifiers = modifiers;
-      _registeredKeycode = ConvertKeysToX11Keycode(key);
+      _registeredKeycode = X11KeyMapper.ConvertKeysToX11Keycode(_dmgr.Display, key);
 
       if (_registeredKeycode == 0)
       {
@@ -87,6 +87,12 @@ namespace Shapoco.Platforms.Linux
         return false;
       }
 
+      _modifierKeycodes = Enum.GetValues(typeof(Common.ModifierKey))
+        .Cast<Common.ModifierKey>()
+        .Where(m => m != Common.ModifierKey.None && modifiers.HasFlag(m))
+        .ToDictionary(m => m, m => ConvertModifierToKeycode(m));
+
+      /*
       // 必要な修飾キーがマッピングで見つかるか確認
       if (modifiers != Common.ModifierKey.None)
       {
@@ -101,16 +107,29 @@ namespace Shapoco.Platforms.Linux
           }
         }
       }
-
-      _cts = new CancellationTokenSource();
-      _listenerTask = StartKeyStateListener(_cts.Token);
-
+      */
+      X11KeyPoller.Instance.KeyMapUpdated += OnKeyMap;
       Console.WriteLine($"[X11 HotKey] Registered hotkey: Modifiers={modifiers}, Key={key} (X11 Keycode={_registeredKeycode})");
       return true;
     }
 
+    private void OnKeyMap(byte[] keymap) {
+      bool allMods = _modifierKeycodes.Values.All(code => IsPressed(keymap, code));
+      bool mainPressed = IsPressed(keymap, _registeredKeycode);
+
+      if (allMods && mainPressed) {
+        if (!_hotkeyCurrentlyPressed) {
+          _hotkeyCurrentlyPressed = true;
+          HotKeyPressed?.Invoke(this, EventArgs.Empty);
+        }
+      } else if (_hotkeyCurrentlyPressed) {
+        _hotkeyCurrentlyPressed = false;
+      }
+    }
+
     public void Unregister()
     {
+      /*
       if (_cts != null)
       {
         _cts.Cancel();
@@ -128,11 +147,18 @@ namespace Shapoco.Platforms.Linux
       _listenerTask = null;
       _registeredKeycode = 0;
       _registeredModifiers = Common.ModifierKey.None;
+      */
+      X11KeyPoller.Instance.KeyMapUpdated -= OnKeyMap;
+      _registeredKeycode = 0;
+      _registeredModifiers = Common.ModifierKey.None;
+      _modifierKeycodes?.Clear();
+      _hotkeyCurrentlyPressed = false;
 #if Debug
       Console.WriteLine("[DBG X11 HotKey] Unregistered Linux hotkey.");
 #endif
     }
 
+    /*
     // キー状態リスナー
     private Task StartKeyStateListener(CancellationToken cancellationToken)
     {
@@ -235,13 +261,23 @@ namespace Shapoco.Platforms.Linux
       return (keymap[byteIndex] & (1 << bitIndex)) != 0;
     }
 
-    private byte ConvertKeysToX11Keycode(Keys key)
-    {
-      // System.Windows.Forms.Keys から X11 Keycode へのマッピング
-      string keysymName = X11KeyMapper.ConvertKeysToX11KeySymString(key);
-      if (string.IsNullOrEmpty(keysymName)) return 0;
+    */
+      private static bool IsPressed(byte[] map, byte code) {
+        int idx = code / 8, bit = code % 8;
+        return (map[idx] & (1 << bit)) != 0;
+      }
 
-      return X11KeyMapper.GetKeycodeForKeysym(_dmgr.Display, keysymName);
+    private byte ConvertModifierToKeycode(Common.ModifierKey mod) {
+      string name = mod switch {
+          Common.ModifierKey.Ctrl => "Control_L",
+          Common.ModifierKey.Shift => "Shift_L",
+          Common.ModifierKey.Alt => "Alt_L",
+          Common.ModifierKey.Win => "Super_L",
+          _ => null
+      };
+      return name != null
+        ? X11KeyMapper.GetKeycodeForKeysym(_dmgr.Display, name)
+        : (byte)0;
     }
 
     public void Dispose()
