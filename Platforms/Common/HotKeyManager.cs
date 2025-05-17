@@ -19,7 +19,8 @@ namespace Shapoco.Platforms.Common {
         _winpop = new Linux.LinuxWindowPopupToggle(mf, notifyIcon);
         _service.HotKeyPressed += _winpop.Toggle;
       } else {
-        throw new PlatformNotSupportedException();
+        //throw new PlatformNotSupportedException();
+        Console.WriteLine("Hotkeys do not work due to unsupported environment.");
       }
     }
 
