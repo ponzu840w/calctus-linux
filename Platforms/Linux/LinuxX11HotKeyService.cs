@@ -62,9 +62,9 @@ namespace Shapoco.Platforms.Linux
       _display = XOpenDisplay(null);
       if (_display == IntPtr.Zero)
       {
-        Console.WriteLine("Failed to open X11 display. Make sure X11/XWayland is running.");
-        // 例外を投げるか、利用不可フラグを立てるなどのエラー処理
-        throw new InvalidOperationException("Failed to open X11 display.");
+#if Debug
+        Console.WriteLine("[DBG X11HotKey] Failed to open X11 display. Make sure X11/XWayland is running.");
+#endif
       }
 
       // 修飾キーとX11キーコードのマッピングを初期化
@@ -73,6 +73,7 @@ namespace Shapoco.Platforms.Linux
 
     private Dictionary<Common.ModifierKey, byte> InitializeModifierKeycodes()
     {
+      if (_display == IntPtr.Zero) return null;
       var mapping = new Dictionary<Common.ModifierKey, byte>();
       // これらのキーコードは環境によって異なる可能性があるため、本来は動的に取得するのが望ましい
       // XStringToKeysym と XKeysymToKeycode を使って初期化時に解決できる
@@ -155,7 +156,7 @@ namespace Shapoco.Platforms.Linux
       _cts = new CancellationTokenSource();
       _listenerTask = StartKeyStateListener(_cts.Token);
 
-      Console.WriteLine($"Registered Linux hotkey: Modifiers={modifiers}, Key={key} (X11 Keycode={_registeredKeycode})");
+      Console.WriteLine($"[X11 HotKey] Registered hotkey: Modifiers={modifiers}, Key={key} (X11 Keycode={_registeredKeycode})");
       return true;
     }
 
@@ -178,13 +179,17 @@ namespace Shapoco.Platforms.Linux
       _listenerTask = null;
       _registeredKeycode = 0;
       _registeredModifiers = Common.ModifierKey.None;
-      Console.WriteLine("Unregistered Linux hotkey.");
+#if Debug
+      Console.WriteLine("[DBG X11 HotKey] Unregistered Linux hotkey.");
+#endif
     }
 
     private Task StartKeyStateListener(CancellationToken cancellationToken)
     {
       return Task.Run(() => {
-          Console.WriteLine("Linux global hotkey listener started.");
+#if Debug
+          Console.WriteLine("[DBG X11 HotKey] Linux global hotkey listener started.");
+#endif
           byte[] keymap = new byte[32]; // 256 bits for key states
           bool hotkeyCurrentlyPressed = false;
 
@@ -241,7 +246,9 @@ namespace Shapoco.Platforms.Linux
             if (!hotkeyCurrentlyPressed)
             {
               hotkeyCurrentlyPressed = true;
-              Console.WriteLine("Linux hotkey triggered.");
+#if Debug
+              Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
+#endif
               // イベントをUIスレッドで実行する必要があれば Task.Factory.StartNew などで調整
               try {
                 HotKeyPressed?.Invoke(this, EventArgs.Empty);
@@ -257,12 +264,16 @@ namespace Shapoco.Platforms.Linux
             if (hotkeyCurrentlyPressed)
             {
               hotkeyCurrentlyPressed = false;
-              Console.WriteLine("Linux hotkey released.");
+#if Debug
+              Console.WriteLine("[DBG X11 HotKey] Linux hotkey released.");
+#endif
             }
           }
           Thread.Sleep(50); // ポーリング間隔 (GlobalHotkeyManager.cs と同じ)
           }
-          Console.WriteLine("Linux global hotkey listener stopped.");
+#if Debug
+          Console.WriteLine("[DBG X11 HotKey] Linux global hotkey listener stopped.");
+#endif
       }, cancellationToken);
     }
 
@@ -344,7 +355,9 @@ namespace Shapoco.Platforms.Linux
         XCloseDisplay(_display);
         _display = IntPtr.Zero;
       }
-      Console.WriteLine("LinuxHotKeyService disposed.");
+#if Debug
+      Console.WriteLine("[DBG X11 HotKey] LinuxHotKeyService disposed.");
+#endif
     }
   }
 }
