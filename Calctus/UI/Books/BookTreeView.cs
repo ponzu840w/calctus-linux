@@ -34,6 +34,7 @@ namespace Shapoco.Calctus.UI.Books {
 
             if (IconImageList == null) { 
                 var scaleFactor = DpiHelper.GetDeviceDpi(this) / 96;
+                if (scaleFactor < 1) scaleFactor = 1;
                 IconImageList = new ImageList();
                 IconImageList.ColorDepth = ColorDepth.Depth32Bit;
                 IconImageList.ImageSize = new Size(16 * scaleFactor, 16 * scaleFactor);
