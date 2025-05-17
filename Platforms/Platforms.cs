@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Shapoco.Platforms {
   public static class Platform {
@@ -17,7 +18,7 @@ namespace Shapoco.Platforms {
           _isMono = Type.GetType("Mono.Runtime") != null;
           _isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
           _isFlatpak = _isUnix && File.Exists("/.flatpak-info");
-          _isWine = Environment.GetEnvironmentVariable("WINELOADERNOEXEC") != null;
+          _isWine = CheckIfWine();
           _flatpakAppId = Environment.GetEnvironmentVariable("FLATPAK_ID");
           _platform_description = Environment.OSVersion.Platform.ToString();
           /* UnixならMonoは自明だよな…
@@ -32,6 +33,29 @@ namespace Shapoco.Platforms {
               _platform_description += "-FP";
           }
           Console.WriteLine($"Platform: {_platform_description}");
+      }
+
+      [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern IntPtr GetModuleHandle(string lpModuleName);
+
+      [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern IntPtr LoadLibrary(string lpFileName);
+
+      [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+        static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+      static bool CheckIfWine() {
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT) {
+          return false;
+        }
+        IntPtr ntdll = GetModuleHandle("ntdll.dll");
+        if (ntdll == IntPtr.Zero) {
+          ntdll = LoadLibrary("ntdll.dll");
+          if (ntdll == IntPtr.Zero) return false;
+        }
+        // wine 固有の関数
+        IntPtr proc = GetProcAddress(ntdll, "wine_get_version");
+        return proc != IntPtr.Zero;
       }
 
       // AggressiveInlining でインライン化
