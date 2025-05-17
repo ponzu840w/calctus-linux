@@ -11,6 +11,8 @@ namespace Shapoco.Platforms.Linux
   // https://github.com/culajunge/LinuxGlobalHotkeys
   public class LinuxX11HotKeyService : Common.IHotKeyService
   {
+    private const int POLLING_T = 50;
+
     // --- X11 P/Invoke
     [DllImport("libX11.so.6")]
     private static extern IntPtr XOpenDisplay(string display);
@@ -18,12 +20,11 @@ namespace Shapoco.Platforms.Linux
     [DllImport("libX11.so.6")]
     private static extern int XCloseDisplay(IntPtr display);
 
-    // XStringToKeysym と XKeysymToKeycode は直接使わず、Keys enum から直接 X11 KeyCode へマッピングする
     [DllImport("libX11.so.6")]
-    private static extern IntPtr XStringToKeysym(string keysym); // マッピングテーブル生成時の補助として使用可能性
+    private static extern IntPtr XStringToKeysym(string keysym);
 
     [DllImport("libX11.so.6")]
-    private static extern byte XKeysymToKeycode(IntPtr display, IntPtr keysym); // マッピングテーブル生成時の補助として使用可能性
+    private static extern byte XKeysymToKeycode(IntPtr display, IntPtr keysym);
 
     [DllImport("libX11.so.6")]
     private static extern int XQueryKeymap(IntPtr display, [Out] byte[] keys);
@@ -67,33 +68,18 @@ namespace Shapoco.Platforms.Linux
 #endif
       }
 
-      // 修飾キーとX11キーコードのマッピングを初期化
       _modifierKeycodes = InitializeModifierKeycodes();
     }
 
+    // 装飾キーのX11キーコード->.NETキーコードのマッピングを初期化
     private Dictionary<Common.ModifierKey, byte> InitializeModifierKeycodes()
     {
       if (_display == IntPtr.Zero) return null;
       var mapping = new Dictionary<Common.ModifierKey, byte>();
-      // これらのキーコードは環境によって異なる可能性があるため、本来は動的に取得するのが望ましい
-      // XStringToKeysym と XKeysymToKeycode を使って初期化時に解決できる
-      // 例: mapping[Common.ModifierKey.Shift] = XKeysymToKeycode(_display, XStringToKeysym("Shift_L"));
-      //     GlobalHotkeyManager.cs の modifierKeycodes も固定値だったため、それに倣うか、より堅牢な方法を検討
-      //     ここでは簡略化のため、一般的なキーコードを仮定 (GlobalHotkeyManager.csの値を参考)
-      //     より堅牢にするには、Xkb XGetModifierMapping を使う必要があるかもしれません。
-
-      // GlobalHotkeyManager.cs の modifierKeycodes にあった値 (Left Shift, Left Ctrl, Left Alt, Left Super)
-      // これらのキーコードは 'xmodmap -pk' などで確認できるシステムの実際のキーコードに合わせるのが理想
-      // Keysym 文字列から Keycode を引く方が移植性は高い
-      mapping[Common.ModifierKey.Shift] = GetKeycodeForKeysym("Shift_L"); // 左Shiftキーのキーコード
-      mapping[Common.ModifierKey.Ctrl] = GetKeycodeForKeysym("Control_L"); // 左Ctrlキーのキーコード
-      mapping[Common.ModifierKey.Alt] = GetKeycodeForKeysym("Alt_L"); // 左Altキーのキーコード
-      mapping[Common.ModifierKey.Win] = GetKeycodeForKeysym("Super_L"); // 左Super/Winキーのキーコード
-
-      // 右側の修飾キーも考慮に入れる場合は追加する
-      // mapping[Common.ModifierKey.Shift_R] = GetKeycodeForKeysym("Shift_R");
-      // mapping[Common.ModifierKey.Ctrl_R] = GetKeycodeForKeysym("Control_R");
-      // ...など
+      mapping[Common.ModifierKey.Shift] = GetKeycodeForKeysym("Shift_L");
+      mapping[Common.ModifierKey.Ctrl] = GetKeycodeForKeysym("Control_L");
+      mapping[Common.ModifierKey.Alt] = GetKeycodeForKeysym("Alt_L");
+      mapping[Common.ModifierKey.Win] = GetKeycodeForKeysym("Super_L");
 
       // 存在しないキーコード（0）が返ってきた場合のフィルタリング
       var validMapping = new Dictionary<Common.ModifierKey, byte>();
@@ -111,6 +97,7 @@ namespace Shapoco.Platforms.Linux
       return validMapping;
     }
 
+    // キー名文字列からX11キーコードを取得
     private byte GetKeycodeForKeysym(string keysymName)
     {
       if (_display == IntPtr.Zero) return 0;
@@ -249,7 +236,6 @@ namespace Shapoco.Platforms.Linux
 #if Debug
               Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
 #endif
-              // イベントをUIスレッドで実行する必要があれば Task.Factory.StartNew などで調整
               try {
                 HotKeyPressed?.Invoke(this, EventArgs.Empty);
               }
@@ -269,7 +255,7 @@ namespace Shapoco.Platforms.Linux
 #endif
             }
           }
-          Thread.Sleep(50); // ポーリング間隔 (GlobalHotkeyManager.cs と同じ)
+          Thread.Sleep(POLLING_T); // ポーリング間隔
           }
 #if Debug
           Console.WriteLine("[DBG X11 HotKey] Linux global hotkey listener stopped.");
@@ -287,24 +273,18 @@ namespace Shapoco.Platforms.Linux
 
     private byte ConvertKeysToX11Keycode(Keys key)
     {
-      // System.Windows.Forms.Keys から X11 Keycode への直接的なマッピング
-      // これは環境依存性が高いため、理想は XStringToKeysym -> XKeysymToKeycode を使うこと。
-      // 初期化時にマッピングテーブルを生成しておくのが良い。
-      // ここでは、GlobalHotkeyManager.cs の手法を踏襲せず、より直接的な方法を試みる。
-      // (ただし、XKeysymToKeycode を使うアプローチがより堅牢)
-
-      // 例: よく使うキーのみマッピング。本番ではもっと網羅的なテーブルが必要
+      // System.Windows.Forms.Keys から X11 Keycode へのマッピング
       string keysymName = ConvertKeysToKeySymStringInternal(key);
       if (string.IsNullOrEmpty(keysymName)) return 0;
 
       return GetKeycodeForKeysym(keysymName);
     }
 
-    // 前回の回答にあった ConvertKeysToKeySymString を内部ヘルパーとして利用
     private string ConvertKeysToKeySymStringInternal(Keys key)
     {
-      if (key >= Keys.A && key <= Keys.Z) return key.ToString();
-      if (key >= Keys.D0 && key <= Keys.D9) return (key - Keys.D0).ToString();
+      if (key >= Keys.A && key <= Keys.Z)    return key.ToString();
+      if (key >= Keys.F1 && key <= Keys.F12) return key.ToString();
+      if (key >= Keys.D0 && key <= Keys.D9)  return (key - Keys.D0).ToString();
       if (key >= Keys.NumPad0 && key <= Keys.NumPad9) return "KP_" + (key - Keys.NumPad0).ToString();
 
       switch (key)
@@ -324,9 +304,6 @@ namespace Shapoco.Platforms.Linux
       case Keys.PageUp: return "Page_Up";
       case Keys.PageDown: return "Page_Down";
       case Keys.Insert: return "Insert";
-      case Keys.F1: return "F1";
-      case Keys.F2: return "F2"; /* ... F12まで ... */
-      case Keys.F12: return "F12";
       case Keys.Oemcomma: return "comma";
       case Keys.OemPeriod: return "period";
       case Keys.OemQuestion: return "slash";
