@@ -59,7 +59,7 @@ namespace Shapoco.Platforms.Linux
       // 既存の登録があれば解除
       if (_registeredKeycode != 0)
       {
-        Console.WriteLine($"Warning: Hotkey already registered. Unregistering previous hotkey.");
+        Console.WriteLine($"[ERR X11HotKey] Hotkey already registered. Unregistering previous hotkey.");
         Unregister();
       }
 
@@ -68,7 +68,7 @@ namespace Shapoco.Platforms.Linux
 
       if (_registeredKeycode == 0)
       {
-        Console.WriteLine($"Failed to get X11 keycode for key: {key}");
+        Console.WriteLine($"[ERR X11HotKey] Failed to get X11 keycode for key: {key}");
         return false;
       }
 
@@ -80,7 +80,7 @@ namespace Shapoco.Platforms.Linux
           if (modFlag == Common.ModifierKey.None) continue;
           if ((modifiers & modFlag) == modFlag && !_modifierKeycodes.ContainsKey(modFlag))
           {
-            Console.WriteLine($"Warning: Keycode for modifier {modFlag} is not available or mapped. Hotkey might not work as expected.");
+            Console.WriteLine($"[ERR X11HotKey] Keycode for modifier {modFlag} is not available or mapped. Hotkey might not work as expected.");
             // 登録を失敗させるか、警告に留めるか
             // return false;
           }
@@ -88,7 +88,9 @@ namespace Shapoco.Platforms.Linux
       }
 
       _poller.KeyMapUpdated += OnKeyMapUpdated;
-      Console.WriteLine($"[X11 HotKey] Registered hotkey: Modifiers={modifiers}, Key={key} (X11 Keycode={_registeredKeycode})");
+#if DEBUG
+      Console.WriteLine($"[DBG X11 HotKey] Registered hotkey: Modifiers={modifiers}, Key={key} (X11 Keycode={_registeredKeycode})");
+#endif
       return true;
     }
 
@@ -139,13 +141,13 @@ namespace Shapoco.Platforms.Linux
         {
           hotkeyCurrentlyPressed = true;
 #if DEBUG
-          Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
+          Console.WriteLine("[DBG X11HotKey] Linux hotkey triggered.");
 #endif
           try {
             HotKeyPressed?.Invoke(this, EventArgs.Empty);
           }
           catch (Exception ex) {
-            Console.WriteLine($"HotKeyPressed handler error: {ex}");
+            Console.WriteLine($"[ERR X11HotKey] HotKeyPressed handler error: {ex}");
           }
         }
       }
@@ -155,7 +157,7 @@ namespace Shapoco.Platforms.Linux
         {
           hotkeyCurrentlyPressed = false;
 #if DEBUG
-          Console.WriteLine("[DBG X11 HotKey] Linux hotkey released.");
+          Console.WriteLine("[DBG X11HotKey] Linux hotkey released.");
 #endif
         }
       }
@@ -174,7 +176,7 @@ namespace Shapoco.Platforms.Linux
       Unregister();
       _dmgr.Release();
 #if DEBUG
-      Console.WriteLine("[DBG X11 HotKey] LinuxHotKeyService disposed.");
+      Console.WriteLine("[DBG X11HotKey] LinuxHotKeyService disposed.");
 #endif
     }
   }

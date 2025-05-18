@@ -20,7 +20,7 @@ namespace Shapoco.Platforms.Common {
         _service.HotKeyPressed += _winpop.Toggle;
       } else {
         //throw new PlatformNotSupportedException();
-        Console.WriteLine("Hotkeys do not work due to unsupported environment.");
+        Console.WriteLine("[ERR HotKey] Hotkeys do not work due to unsupported environment.");
       }
     }
 
