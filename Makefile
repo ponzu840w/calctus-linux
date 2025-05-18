@@ -38,6 +38,12 @@ install: all
 
 # 実行ファイル本体を share 配下へ
 	install -m 755 bin/$(CONFIG)/$(APP_WIN).exe $(SHAREDIR)/$(APP_WIN).exe
+	install -m 644    README.md    $(SHAREDIR)/README.md
+	install -m 644    FUNCTIONS.md $(SHAREDIR)/FUNCTIONS.md
+	install -m 755 -d img          $(SHAREDIR)/img
+	install -m 644    img/*        $(SHAREDIR)/img/
+	install -m 755 -d Samples      $(SHAREDIR)/Samples
+	install -m 644    Samples/*    $(SHAREDIR)/Samples/
 
 # ラッパースクリプトを bin へ
 	printf '%s\n' \
