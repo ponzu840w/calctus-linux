@@ -4,8 +4,8 @@ using System.Windows.Forms;
 
 namespace Shapoco.Platforms.Linux.X11 {
   /// <summary>
-  /// Manages a single X Display handle with reference counting.
-  /// Ensures XOpenDisplay is called only once per process.
+  /// 参照カウントで単一の X Display handle を管理する
+  /// XOpenDisplay はプログラム全体で一度だけ呼ばれる
   /// </summary>
   public sealed class X11DisplayManager {
     private static readonly object _sync = new object();
@@ -22,7 +22,7 @@ namespace Shapoco.Platforms.Linux.X11 {
     }
 
     /// <summary>
-    /// Gets the singleton instance, incrementing the reference count.
+    /// シングルトンなインスタンスを返す
     /// </summary>
     public static X11DisplayManager Instance {
       get {
@@ -38,12 +38,12 @@ namespace Shapoco.Platforms.Linux.X11 {
     }
 
     /// <summary>
-    /// The native X Display pointer.
+    /// ネイティブの X Display ポインタ
     /// </summary>
     public IntPtr Display => _display;
 
     /// <summary>
-    /// Releases a reference; closes the display when count reaches zero.
+    /// 参照を開放する 誰も参照しなくなったら X Display を閉じる
     /// </summary>
     public void Release() {
       lock (_sync) {
