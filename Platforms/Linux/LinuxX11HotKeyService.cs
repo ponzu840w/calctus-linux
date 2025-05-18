@@ -97,7 +97,7 @@ namespace Shapoco.Platforms.Linux
       _poller.KeyMapUpdated -= OnKeyMapUpdated;
       _registeredKeycode = 0;
       _registeredModifiers = Common.ModifierKey.None;
-#if Debug
+#if DEBUG
       Console.WriteLine("[DBG X11 HotKey] Unregistered Linux hotkey.");
 #endif
     }
@@ -138,7 +138,7 @@ namespace Shapoco.Platforms.Linux
         if (!hotkeyCurrentlyPressed)
         {
           hotkeyCurrentlyPressed = true;
-#if Debug
+#if DEBUG
           Console.WriteLine("[DBG X11 HotKey] Linux hotkey triggered.");
 #endif
           try {
@@ -154,7 +154,7 @@ namespace Shapoco.Platforms.Linux
         if (hotkeyCurrentlyPressed)
         {
           hotkeyCurrentlyPressed = false;
-#if Debug
+#if DEBUG
           Console.WriteLine("[DBG X11 HotKey] Linux hotkey released.");
 #endif
         }
@@ -173,7 +173,7 @@ namespace Shapoco.Platforms.Linux
     {
       Unregister();
       _dmgr.Release();
-#if Debug
+#if DEBUG
       Console.WriteLine("[DBG X11 HotKey] LinuxHotKeyService disposed.");
 #endif
     }
