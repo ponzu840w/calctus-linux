@@ -24,7 +24,7 @@ namespace Shapoco.Platforms {
       _platform_id = Environment.OSVersion.Platform;
       _isMono = Type.GetType("Mono.Runtime") != null;
       _isUnix = _isMono && _platform_id == PlatformID.Unix;
-      _isWindows = !_isMono && _platform_id == PlatformID.Win32NT;
+      _isWindows = _platform_id == PlatformID.Win32NT;
 
       // Wine
       _isWine = _checkIfWine();
