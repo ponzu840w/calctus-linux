@@ -23,13 +23,10 @@ namespace Shapoco.Calctus.UI {
         private static MainForm _instance = null;
         public static MainForm Instance => _instance;
 
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetForegroundWindow();
-
         private Font _sheetViewFont = null;
         private BookItem _activeBookItem = null;
 
-        private HotKey _hotkey = null;
+        private HotKeyManager _hotkeyman;
         private bool _startup = true;
         private Timer _focusTimer = new Timer();
         private Point _startupWindowPos;
@@ -56,6 +53,7 @@ namespace Shapoco.Calctus.UI {
             ));
 
             InitializeComponent();
+            this.notifyIcon.Icon = this.Icon;
             if (this.DesignMode) return;
 
             sidePaneBodyPanel.Visible = false;
@@ -122,7 +120,11 @@ namespace Shapoco.Calctus.UI {
             onBookItemSelected();
 
             _focusTimer.Tick += _focusTimer_Tick;
+
+            _hotkeyman = new HotKeyManager(this, notifyIcon);
         }
+
+        public void ShowForeground() => showForeground();
 
         private void MainForm_Load(object sender, EventArgs e) {
             reloadSettings();
@@ -195,7 +197,7 @@ namespace Shapoco.Calctus.UI {
                 }
             }
             notifyIcon.Visible = false;
-            disableHotkey();
+            _hotkeyman.Disable();
             deleteOldHistories();
         }
 
@@ -232,8 +234,8 @@ namespace Shapoco.Calctus.UI {
 
                 notifyIcon.Visible = s.Startup_TrayIcon;
 
-                disableHotkey();
-                enableHotkey();
+                _hotkeyman.Disable();
+                _hotkeyman.Enable();
 
                 var font_large_coeff = 1.25f;
                 var font_style = s.Appearance_Font_Bold ? FontStyle.Bold : FontStyle.Regular;
@@ -289,27 +291,6 @@ namespace Shapoco.Calctus.UI {
             view.BackColor = s.Appearance_Color_Background;
             view.ForeColor = s.Appearance_Color_Text;
             view.RelayoutText();
-        }
-
-        private void enableHotkey() {
-            var s = Settings.Instance;
-            if (s.Hotkey_Enabled && s.HotKey_KeyCode != Keys.None) {
-                MOD_KEY mod = MOD_KEY.NONE;
-                if (s.HotKey_Win) mod |= MOD_KEY.WIN;
-                if (s.HotKey_Alt) mod |= MOD_KEY.ALT;
-                if (s.HotKey_Ctrl) mod |= MOD_KEY.CONTROL;
-                if (s.HotKey_Shift) mod |= MOD_KEY.SHIFT;
-                _hotkey = new HotKey(mod, s.HotKey_KeyCode);
-                _hotkey.HotKeyPush += _hotkey_HotKeyPush;
-            }
-        }
-
-        private void disableHotkey() {
-            if (_hotkey != null) {
-                _hotkey.HotKeyPush -= _hotkey_HotKeyPush;
-                _hotkey.Dispose();
-                _hotkey = null;
-            }
         }
 
         private void SidePaneOpenButton_Click(object sender, EventArgs e) {
@@ -374,14 +355,14 @@ namespace Shapoco.Calctus.UI {
             }
             int major = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major;
             int minor = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor;
-            int do_minor = 1; // 本家のマイナー番号に対してこちらのマイナー番号、ドマイナー番号。
+            int do_minor = 2; // 本家のマイナー番号に対してこちらのマイナー番号、ドマイナー番号。
             int revis = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Revision;
             int build = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Build;
             string version_str = major + "." + minor + ".L" + do_minor + " [b:" + build + " r:" + revis + "]";
 
             this.Text =
                 Application.ProductName +
-                " (v" + version_str + ") - " +
+                " (v" + version_str + ") - " + Platform.GetPlatformDescription() + " - " +
                 (_activeBookItem != null ? _activeBookItem.Name : "(null)");
 
             if (requestCheckFileChange) {
@@ -471,20 +452,6 @@ namespace Shapoco.Calctus.UI {
             }
             else {
                 trayMenuStrip.Show(Cursor.Position);
-            }
-        }
-
-        private void _hotkey_HotKeyPush(object sender, EventArgs e) {
-            if (GetForegroundWindow() == this.Handle) {
-                if (notifyIcon.Visible) {
-                    this.Visible = false;
-                }
-                else {
-                    this.WindowState = FormWindowState.Minimized;
-                }
-            }
-            else {
-                showForeground();
             }
         }
         

@@ -566,6 +566,7 @@ namespace Shapoco.Calctus.UI.Sheets {
             IsCandidateShowProcess = true;
 
             // カーソルの画面座標
+            CandidatesSelectKey();
             var e = new QueryScreenCursorLocationEventArgs(_candKeyStart);
             QueryScreenCursorLocation?.Invoke(this, e);
             var screenPt = e.Result;
@@ -575,7 +576,7 @@ namespace Shapoco.Calctus.UI.Sheets {
                 CandidateProvider,
                 screenPt);
 
-            CandidatesUpdate();
+            CandidatesSetKey();
 
             IsCandidateShowProcess = false;
         }
