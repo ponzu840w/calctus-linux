@@ -2,11 +2,23 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
+/*
+いろんな形式のキーコードを相互変換するユーティリティ
+一部X11の関数を呼ぶものはdisplayを引数に取る
+
+.NET
+  System.Windows.Forms.Keys Keys
+X11
+  IntPtr KeySym
+  String KeySym String
+  byte   keycode
+*/
+
 namespace Shapoco.Platforms.Linux.X11
 {
   public static class X11KeyMapper
   {
-    // --- X11 P/Invoke (同じ DLL は  hotkey service と共有) ---
+    // --- X11 P/Invoke
     [DllImport("libX11.so.6")] static extern IntPtr XStringToKeysym(string s);
     [DllImport("libX11.so.6")] static extern byte XKeysymToKeycode(IntPtr d, IntPtr ks);
 
@@ -19,7 +31,7 @@ namespace Shapoco.Platforms.Linux.X11
       return XKeysymToKeycode(display, keysym);
     }
 
-    /// <summary>.NET Keys → X11 KeySym 文字列</summary>
+    /// <summary>.NET Keys -> X11 KeySym 文字列</summary>
     public static string ConvertKeysToX11KeySymString(Keys key)
     {
       if (key >= Keys.A && key <= Keys.Z) return key.ToString();
@@ -84,18 +96,13 @@ namespace Shapoco.Platforms.Linux.X11
       return false;
     }
 
+    /// <summary>.NET Keys -> X11 keycode</summary>
     public static byte ConvertKeysToX11Keycode(IntPtr display, Keys key)
     {
       string keysymName = ConvertKeysToX11KeySymString(key);
       if (string.IsNullOrEmpty(keysymName)) return 0;
 
       return X11KeyMapper.GetKeycodeForKeysym(display, keysymName);
-    }
-
-    /// <summary>.NET Keys → X11 keycode</summary>
-    public static byte ConvertKeysToKeycode(IntPtr display, Keys key) {
-      string sym = ConvertKeysToX11KeySymString(key);
-      return GetKeycodeForKeysym(display, sym);
     }
   }
 }
