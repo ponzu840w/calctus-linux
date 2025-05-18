@@ -355,7 +355,7 @@ namespace Shapoco.Calctus.UI {
             }
             int major = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major;
             int minor = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor;
-            int do_minor = 1; // 本家のマイナー番号に対してこちらのマイナー番号、ドマイナー番号。
+            int do_minor = 2; // 本家のマイナー番号に対してこちらのマイナー番号、ドマイナー番号。
             int revis = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Revision;
             int build = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Build;
             string version_str = major + "." + minor + ".L" + do_minor + " [b:" + build + " r:" + revis + "]";
