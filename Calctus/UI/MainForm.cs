@@ -485,6 +485,7 @@ namespace Shapoco.Calctus.UI {
             if (this.WindowState == FormWindowState.Minimized) {
                 this.WindowState = FormWindowState.Normal;
             }
+            /*
             if (Platform.IsWindows()) {
               try {
                 // Microsoft.VisualBasic.Interaction.AppActivate(this.Text);
@@ -493,7 +494,8 @@ namespace Shapoco.Calctus.UI {
                 var method = type?.GetMethod( "AppActivate", new[] { typeof(string) });
                 method?.Invoke(null, new object[] { this.Text });
               } catch { }
-            }
+            }*/
+            this.Activate();
         }
 
         private void checkActiveFileChange() {
