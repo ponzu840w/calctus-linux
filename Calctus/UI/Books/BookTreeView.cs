@@ -134,6 +134,7 @@ namespace Shapoco.Calctus.UI.Books {
         }
 
         protected override void OnKeyDown(KeyEventArgs e) {
+            e = Platforms.Linux.WrongJP106LayoutRemapper.Remap(e);
             base.OnKeyDown(e);
             e.SuppressKeyPress = true;
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S) {

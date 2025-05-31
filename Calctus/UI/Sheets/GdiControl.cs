@@ -221,6 +221,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         }
 
         protected override void OnKeyDown(KeyEventArgs e) {
+            e = Platforms.Linux.WrongJP106LayoutRemapper.Remap(e);
             _focusedBox?.PerformKeyDown(e);
             if (!e.Handled) {
                 base.OnKeyDown(e);

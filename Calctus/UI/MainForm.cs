@@ -548,6 +548,7 @@ namespace Shapoco.Calctus.UI {
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e) {
+            e = Platforms.Linux.WrongJP106LayoutRemapper.Remap(e);
             e.SuppressKeyPress = true;
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S) {
                 if (_activeBookItem.HasFileName) {

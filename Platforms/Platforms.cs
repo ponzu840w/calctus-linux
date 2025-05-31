@@ -17,6 +17,7 @@ namespace Shapoco.Platforms {
     static readonly string _sessionType;
     static readonly string _displayEnv;
     static readonly string _waylandEnv;
+    static readonly bool _x11wrongJP106;
 
     // static コンストラクタ
     static Platform() {
@@ -48,6 +49,17 @@ namespace Shapoco.Platforms {
         _waylandEnv  = string.Empty;
       }
 
+      // X11がjp106レイアウトキーボードか
+      // monoのバグによる変なマッピングへのパッチ用
+      _x11wrongJP106 = _checkIfKeyboardLayoutJP106();
+#if DEBUG
+      if (_x11wrongJP106) {
+        Console.WriteLine("X11 keyboard layout is JP106, but it seems to be wrong. Patching...");
+      } else {
+        Console.WriteLine("X11 keyboard layout is not JP106.");
+      }
+#endif
+
       // プラットフォームを端的に表す文字列を作成
       _platform_description = _platform_id.ToString();
       //if (_isMono) _platform_description    += "-Mono"; // UnixならMonoは自明だよな…
@@ -76,6 +88,63 @@ namespace Shapoco.Platforms {
       return proc != IntPtr.Zero;
     }
 
+    // setxkbmap コマンドを使って、X11 のキーボードレイアウトが
+    // 日本語106配列であるかどうかを確認する。
+    // monoのバグが修正された場合もfalseを返すべきなので、
+    // 将来的にはmonoのバージョンチェックも必要になるかもしれない。
+    private static bool _checkIfKeyboardLayoutJP106()
+    {
+      // Unix 環境かつ DISPLAY が設定されていなければ false
+      if (!_isUnix || string.IsNullOrEmpty(_displayEnv))
+      {
+        return false;
+      }
+
+      try
+      {
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+          FileName = "setxkbmap",
+          Arguments = "-query",
+          RedirectStandardOutput = true,
+          UseShellExecute = false,
+          CreateNoWindow = true
+        };
+
+        using (var proc = System.Diagnostics.Process.Start(psi))
+        {
+          // 全体を一度に読み込む
+          string output = proc.StandardOutput.ReadToEnd();
+          proc.WaitForExit();
+
+          if (string.IsNullOrEmpty(output))
+          {
+            return false;
+          }
+
+          // 改行ごとに分割して処理
+          foreach (var rawLine in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+          {
+            // 行を小文字化して検索の都合をつける
+            string line = rawLine.ToLowerInvariant();
+
+            // 「layout」または「variant」という文字列を含む行だけを対象にし、
+            // その行に「jp」あるいは「jp106」が含まれていたら即 true を返す
+            if ((line.Contains("layout") || line.Contains("variant")) && line.Contains("jp"))
+            {
+              return true;
+            }
+          }
+        }
+      }
+      catch
+      {
+        // 何か例外が起きたら false を返す
+      }
+
+      return false;
+    }
+
     public static bool IsMono()        => _isMono;
     public static bool IsWindows()     => _isWindows;
     public static bool IsLinuxMono()   => _isMono && _isUnix;
@@ -87,6 +156,7 @@ namespace Shapoco.Platforms {
     public static bool IsXWayland()    => _sessionType == "wayland" && _displayEnv.Length > 0;
     public static bool IsX11()         => IsPureX11() || IsXWayland();
     public static bool IsWayland()     => IsPureWayland() || IsXWayland();
+    public static bool IsX11WrongJP106() => _x11wrongJP106;
     public static string GetFlatpakAppId()  => _flatpakAppId ?? string.Empty;
     public static string GetPlatformDescription() => _platform_description;
   }

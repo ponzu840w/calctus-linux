@@ -182,7 +182,7 @@ namespace Shapoco.Calctus.UI.Sheets {
         public void PerformMouseMove(MouseEventArgs e) => OnMouseMove(e);
         public void PerformMouseUp(MouseEventArgs e) => OnMouseUp(e);
         public void PerformDoubleClick(EventArgs e) => OnDoubleClick(e);
-        protected virtual void OnKeyDown(KeyEventArgs e) { KeyDown?.Invoke(this, e); }
+        protected virtual void OnKeyDown(KeyEventArgs e) { KeyDown?.Invoke(this, Platforms.Linux.WrongJP106LayoutRemapper.Remap(e)); }
         protected virtual void OnKeyUp(KeyEventArgs e) { KeyUp?.Invoke(this, e); }
         protected virtual void OnKeyPress(KeyPressEventArgs e) { KeyPress?.Invoke(this, e); }
         protected virtual void OnMouseDown(MouseEventArgs e) { }

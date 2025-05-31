@@ -28,11 +28,6 @@ namespace Shapoco.Calctus.UI {
     private bool _shift = false;
     private Keys _keyCode = Keys.None;
 
-    // X11
-    private readonly bool _useX11;
-    private          bool _active;
-    private readonly byte[] _prevMap = new byte[32];
-
     public KeyCodeBox() {
       if (this.DesignMode) {
         var label = new Label();
@@ -80,21 +75,11 @@ namespace Shapoco.Calctus.UI {
       _keyCodeBox.KeyDown += _keyBox_KeyDown;
       _keyCodeBox.KeyUp += _keyBox_KeyUp;
       _keyCodeBox.KeyPress += _keyBox_KeyPress;
-
-      // monoだと入力言語によってキーマップが狂ったりするので、直接X11から取得する
-      // グローバルホットキーが使っているポーラーを流用
-      if (Platform.IsMono() && Platform.IsX11())
-      {
-        _useX11 = true;
-        _keyCodeBox.Enter += (_, __) => { _active = true; Array.Clear(_prevMap, 0, _prevMap.Length); };
-        _keyCodeBox.Leave += (_, __) => { _active = false; };
-        X11KeyPoller.Instance.KeyMapUpdated += OnX11KeyMapUpdated;
-      }
     }
 
     private void _keyBox_KeyDown(object sender, KeyEventArgs e) {
       e.Handled = true;
-      if (_useX11) return;
+      e = Platforms.Linux.WrongJP106LayoutRemapper.Remap(e);
       this.KeyCode = e.KeyCode;
     }
 
@@ -155,41 +140,8 @@ namespace Shapoco.Calctus.UI {
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            if (_useX11)
-            {
-                X11KeyPoller.Instance.KeyMapUpdated -= OnX11KeyMapUpdated;
-                X11DisplayManager.Instance.Release();
-            }
-        }
         base.Dispose(disposing);
     }
 
-    // KeyCodeBox がフォーカス時のみ受け取る
-    private void OnX11KeyMapUpdated(byte[] map)
-    {
-      if (!_active) return;
-      // 新たに押されたキーを探索
-      for (int codeInt = 8; codeInt < 256; codeInt++)
-      {
-        byte code = (byte)codeInt;
-        int idx = code / 8, bit = code % 8;
-        bool now = (map[idx] & (1 << bit)) != 0;
-        bool was = (_prevMap[idx] & (1 << bit)) != 0;
-        if (now && !was)
-        {
-          // X11KeyMapper で .NET Keys に変換
-          if (X11KeyMapper.TryX11KeycodeToKeys(
-                X11DisplayManager.Instance.Display, code, out Keys k))
-          {
-            // UI スレッドに反映
-            _keyCodeBox.BeginInvoke((Action)(() => KeyCode = k));
-            break;
-          }
-        }
-      }
-      Buffer.BlockCopy(map, 0, _prevMap, 0, _prevMap.Length);
-    }
   }
 }
