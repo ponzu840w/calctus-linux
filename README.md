@@ -13,6 +13,7 @@ Calctus（[shapoco/calctus](https://github.com/shapoco/calctus)）のMono/Linux�
 MonoはWineHQに移管（[https://gitlab.winehq.org/mono/mono](https://gitlab.winehq.org/mono/mono)）されて以降、バイナリの配布をしていません。最新版をインストールするには、ソースコードからビルドする必要があります。
 
 （実行には必ずしも最新版のMonoが必要というわけではありませんが、わざわざLinuxでCalctusを動かしたいと思っている人はビルドした方が幸せになれると思います）
+#### Ubuntu等
 ```
 # ビルドツール
 sudo apt-get install git autoconf libtool automake build-essential gettext cmake python3 curl pkg-config libglib2.0-dev libcairo2-dev
@@ -33,6 +34,21 @@ cd libgdiplus-6.2
 ./configure --prefix=/usr/local
 make
 sudo make install
+```
+
+#### Termux
+```
+# mono 素直にpkgリポジトリのものを使うこと 動作確認時 6.14.1-2
+pkg install mono
+
+# libgdiplus リポジトリにないのでビルドする
+pkg install clang make x11-repo xorgproto # 他にも必要パッケージがあるかも
+wget https://dl.winehq.org/mono/sources/libgdiplus/libgdiplus-6.2.tar.gz
+tar -xvf libgdiplus-6.2.tar.gz
+cd libgdiplus-6.2
+./configure --prefix=$PREFIX
+make LDFLAGS="-Wl,--allow-shlib-undefined"
+make install
 ```
 
 ### Calctusを起動
@@ -458,3 +474,4 @@ If you wish to use a scripting language other than Python, please register the e
 ![](img/settings_scripts.png)
 
 ----
+
